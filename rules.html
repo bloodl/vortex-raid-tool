@@ -1,0 +1,369 @@
+<title>Loot Priority Score</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Albert+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f7f6fa;
+    --card: #ffffff;
+    --ink: #232030;
+    --muted: #6b6580;
+    --border: #e2ddec;
+    --accent: #7d36c0;
+    --accent-soft: #f1e8fb;
+    --q-poor: #8f8c96;
+    --q-teal: #0a8f74;
+    --q-green: #2f8f1f;
+    --q-blue: #0063c4;
+    --q-epic: #8e3fd4;
+    --q-legend: #b35400;
+    --formula-bg: #241f31;
+    --formula-ink: #efeaf8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171420;
+      --card: #201c2b;
+      --ink: #e9e5f2;
+      --muted: #9d94b3;
+      --border: #332c44;
+      --accent: #b678f0;
+      --accent-soft: #2c2340;
+      --q-poor: #8f8c96;
+      --q-teal: #4fe0bd;
+      --q-green: #4fd42a;
+      --q-blue: #4aa8ff;
+      --q-epic: #b46ef5;
+      --q-legend: #ff9633;
+      --formula-bg: #120f1a;
+      --formula-ink: #efeaf8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171420;
+    --card: #201c2b;
+    --ink: #e9e5f2;
+    --muted: #9d94b3;
+    --border: #332c44;
+    --accent: #b678f0;
+    --accent-soft: #2c2340;
+    --q-poor: #8f8c96;
+    --q-teal: #4fe0bd;
+    --q-green: #4fd42a;
+    --q-blue: #4aa8ff;
+    --q-epic: #b46ef5;
+    --q-legend: #ff9633;
+    --formula-bg: #120f1a;
+    --formula-ink: #efeaf8;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Albert Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.65;
+    margin: 0;
+    padding: 0 20px;
+  }
+  .page { max-width: 46rem; margin: 0 auto; padding: 3.5rem 0 5rem; }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+  h1 {
+    font-family: Marcellus, Georgia, serif;
+    font-size: clamp(2.1rem, 5.5vw, 3rem);
+    font-weight: 400;
+    line-height: 1.1;
+    margin: 0 0 1rem;
+    text-wrap: balance;
+  }
+  .standfirst { font-size: 1.1rem; color: var(--muted); margin: 0; max-width: 38rem; }
+
+  h2 {
+    font-family: Marcellus, Georgia, serif;
+    font-size: 1.45rem;
+    font-weight: 400;
+    margin: 3rem 0 0.75rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    text-wrap: balance;
+  }
+  h3 { font-size: 1rem; font-weight: 600; margin: 1.75rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  strong { font-weight: 600; }
+  .page > section > p, .page > section > ul { max-width: 42rem; }
+  ul { padding-left: 1.25rem; margin: 0 0 1rem; }
+  li { margin-bottom: 0.4rem; }
+
+  .formula {
+    background: var(--formula-bg);
+    color: var(--formula-ink);
+    border-radius: 10px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    font-family: "Spline Sans Mono", Consolas, monospace;
+    font-size: clamp(1.05rem, 3.4vw, 1.45rem);
+    font-weight: 500;
+    margin: 1.5rem 0 1rem;
+    overflow-x: auto;
+  }
+  .formula .t-a { color: #7fd1ff; }
+  .formula .t-p { color: #ffd479; }
+  .formula .t-e { color: #7ff0d4; }
+  .formula .t-m { color: #8ee8a0; }
+  .formula .t-d { color: #ff9c9c; }
+
+  .terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; margin: 1.25rem 0 1rem; }
+  .term {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+  }
+  .term b {
+    font-family: "Spline Sans Mono", Consolas, monospace;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+  .term p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+
+  .tablewrap { overflow-x: auto; margin: 1.25rem 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0.5rem 0.9rem;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.num { font-family: "Spline Sans Mono", Consolas, monospace; font-size: 0.9rem; }
+  .qdot { display: inline-block; width: 0.6em; height: 0.6em; border-radius: 50%; margin-right: 0.45em; vertical-align: baseline; }
+  td.q-legend, td.q-epic, td.q-blue, td.q-green, td.q-poor { white-space: nowrap; }
+  .q-legend { color: var(--q-legend); font-weight: 600; }
+  .q-epic { color: var(--q-epic); font-weight: 600; }
+  .q-blue { color: var(--q-blue); font-weight: 600; }
+  .q-green { color: var(--q-green); font-weight: 600; }
+  .q-poor { color: var(--q-poor); font-weight: 600; }
+
+  .callout {
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 0.9rem 1.1rem;
+    margin: 1.25rem 0;
+    font-size: 0.95rem;
+  }
+  .callout p { margin: 0; }
+
+  figure { margin: 1.75rem 0; }
+  figure svg { max-width: 100%; height: auto; display: block; }
+  figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 1.25rem 0; display: grid; gap: 0.75rem; }
+  ol.steps li {
+    counter-increment: step;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem 0.9rem 3.1rem;
+    position: relative;
+    margin: 0;
+  }
+  ol.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 1rem;
+    top: 0.95rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--card);
+    font-weight: 700;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  ol.steps b { display: block; margin-bottom: 0.15rem; }
+  ol.steps p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+
+  .footnote { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1.25rem; }
+  code { font-family: "Spline Sans Mono", Consolas, monospace; font-size: 0.88em; background: var(--accent-soft); border-radius: 4px; padding: 0.1em 0.35em; }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow">Vortex loot rules · TBC Anniversary</p>
+    <h1>Loot Priority Score</h1>
+    <p class="standfirst">One number that says where every raider stands — built from attendance, performance, raid-night effort, and the loot you've already won. The council still decides; the score keeps the decision fair, fast, and visible to everyone.</p>
+  </header>
+
+  <section>
+    <h2>Why a score</h2>
+    <p>Loot council works when people trust it. Right now the inputs to that trust — who shows up, who performs, who was geared last month — live in three different tools and in officers' heads. The Priority Score pulls those inputs into one standing number per raider, recomputed weekly. It doesn't replace the council's judgment on any single item; it replaces the arguing about whose turn it is.</p>
+  </section>
+
+  <section>
+    <h2>The score</h2>
+    <div class="formula">Priority = (50·<span class="t-a">A</span> + 15·<span class="t-p">P</span> + 35·<span class="t-e">E</span>) × <span class="t-m">M</span> − <span class="t-d">D</span></div>
+    <div class="terms">
+      <div class="term"><b><span style="color:var(--q-blue)">A</span> — Attendance</b><p>Share of the last 8 raid resets you attended. Signing up and getting benched counts as attending — sitting for the guild never costs you priority. Getting rostered and not showing counts as nothing.</p></div>
+      <div class="term"><b><span style="color:var(--q-legend)">P</span> — Performance</b><p>Your median Warcraft Logs percentile over the last 4 resets, in your item-level bracket. Median, not best — one lucky parse doesn't move it. Tanks and healers are scored flat at 75 — tanking doesn't parse, and healing parses mostly measure who sniped the overheals.</p></div>
+      <div class="term"><b><span style="color:var(--q-teal)">E</span> — Effort</b><p>Consumable use on boss kills over the last 4 resets: potions weigh most, then flask/elixirs, food, and scrolls. Fully in your own hands, unlike a parse — which is why it outweighs one.</p></div>
+      <div class="term"><b><span style="color:var(--q-green)">M</span> — Rank</b><p>Every current raider is ×1.0 — we run no trials. The knob exists in the config for the day we want one.</p></div>
+      <div class="term"><b><span style="color:var(--q-epic)">D</span> — Loot debt</b><p>Points for items you've recently won, fading by half every 3 weeks. Big wins push you down the list for a few resets, then age out.</p></div>
+    </div>
+    <p>The weighting follows one principle: the more of the input you personally control, the more it counts. Attendance is half the score — showing up is fully your choice and it's what kills raids when it slips. Effort is second at 35 because flasking, eating, and potting are pure personal choices too, visible in the log every night. Performance stays a nudge at 15: parses lean on kill times, comp, and gear that no single raider controls — and for healers they barely measure anything, which is why healers (like tanks) take a flat 75 there and compete on attendance and effort instead.</p>
+  </section>
+
+  <section>
+    <h2>Effort, measured</h2>
+    <p>E is read straight out of the combat log for boss kills — no screenshots, no consume checks at the raid entrance. Each raid night scores four things, potions first:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Component</th><th>Full credit for</th><th class="num">Weight</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Potions</strong></td><td>One potion per boss kill, on average — haste, destruction, ironshield, mana, or protection potions (shadow pots on Mother Shahraz count).</td><td class="num">40%</td></tr>
+          <tr><td><strong>Flask</strong></td><td>A flask — Shattrath and Chromatic Wonder variants included — or a battle + guardian elixir pair, up 75%+ of kill time. A single elixir earns half.</td><td class="num">30%</td></tr>
+          <tr><td><strong>Food</strong></td><td>A Well Fed buff up 75%+ of kill time.</td><td class="num">20%</td></tr>
+          <tr><td><strong>Scrolls</strong></td><td>An Agility or Strength scroll up 75%+ of kill time. <strong>Melee DPS and hunters only</strong> — caster scrolls collide with raid buffs, so casters, healers, and tanks are scored on the other three components alone.</td><td class="num">10%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The 75% bar is deliberate: a flask that expires during the last boss of a long night — or an officer-agreed early leave near the end — still pays full credit. Drums are a group cooldown, not a personal consumable, so they're ignored. Every consumable the log can see counts, including the ones whose buff name hides what it is (Elixir of Major Agility shows as "Mighty Agility", the Mark of the Illidari flasks as "Pure Death of Shattrath") and niche picks like Elixir of Demonslaying. Who counts as melee is read from your logged spec, so an elemental shaman owes no scroll and an enhancement shaman does.</p>
+  </section>
+
+  <section>
+    <h2>Loot debt</h2>
+    <p>Every item awarded through RCLootCouncil adds debt based on how significant it was. Debt decays with a 3-week half-life: a 30-point weapon costs you 30 points this reset, ~19 two weeks later, ~9 after five weeks, and is gone within a phase.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tier</th><th>Our RCLC button</th><th>What counts</th><th class="num">Debt</th></tr></thead>
+        <tbody>
+          <tr><td class="q-legend"><span class="qdot" style="background:var(--q-legend)"></span>Legendary</td><td><em>council award</em></td><td>Council-assigned legendaries (e.g. Warglaives of Azzinoth) — major ×1.5</td><td class="num">45</td></tr>
+          <tr><td class="q-legend"><span class="qdot" style="background:var(--q-legend)"></span>Major</td><td><code>Best in slot</code></td><td>Real weapons — melee for most classes, ranged for hunters — and best-in-slot trinkets</td><td class="num">30</td></tr>
+          <tr><td class="q-epic"><span class="qdot" style="background:var(--q-epic)"></span>Standard</td><td><code>Best in slot</code></td><td>Any other mainspec upgrade, including stat-stick weapon slots (wands, thrown, a hunter's melee)</td><td class="num">15</td></tr>
+          <tr><td class="q-epic"><span class="qdot" style="background:var(--q-epic)"></span>Tier token</td><td><code>Best in slot</code></td><td>Tier tokens — three drop per token boss, so each one is priced by its supply</td><td class="num">10</td></tr>
+          <tr><td class="q-blue"><span class="qdot" style="background:var(--q-blue)"></span>Minor</td><td><code>Upgrade</code></td><td>Small upgrades, sidegrades</td><td class="num">6</td></tr>
+          <tr><td class="q-green"><span class="qdot" style="background:var(--q-green)"></span>Offspec</td><td><code>Off Spec</code></td><td>Offspec pieces</td><td class="num">3</td></tr>
+          <tr><td class="q-poor"><span class="qdot" style="background:var(--q-poor)"></span>Free</td><td><code>Disenchant</code> · <code>Pass</code></td><td>Uncontested drops, patterns, shards for the guild bank — also anyone who didn't respond in time</td><td class="num">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>One button, one price: <code>Best in slot</code> prices itself from the item (weapon → major, tier token → token, everything else → standard), and <code>Upgrade</code>, <code>Off Spec</code>, and <code>Disenchant</code>/<code>Pass</code> map straight to their tiers — no extra bookkeeping on loot night. Disenchants are free no matter what the item is: sharding for the bank never costs the disenchanter anything.</p>
+  </section>
+
+  <section>
+    <h2>A week in numbers</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Raider</th><th class="num">A</th><th class="num">P</th><th class="num">E</th><th class="num">D</th><th class="num">Priority</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ingy</strong> · Raider<br><span style="color:var(--muted);font-size:0.85rem">Every raid, top parses, scrolls + potions every night, little recent loot</span></td><td class="num">1.00</td><td class="num">0.90</td><td class="num">0.86</td><td class="num">9.9</td><td class="num"><strong>83.7</strong></td></tr>
+          <tr><td><strong>Eclipz</strong> · Raider<br><span style="color:var(--muted);font-size:0.85rem">Solid attendance, light recent loot — consumables at half</span></td><td class="num">0.86</td><td class="num">0.68</td><td class="num">0.50</td><td class="num">17.0</td><td class="num"><strong>53.5</strong></td></tr>
+          <tr><td><strong>Sindarel</strong> · Raider<br><span style="color:var(--muted);font-size:0.85rem">95% effort — and a mountain of gear from the last three weeks</span></td><td class="num">0.89</td><td class="num">0.61</td><td class="num">0.95</td><td class="num">107.5</td><td class="num"><strong>−20.5</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Three real rows from the current standings (2 Sep build — the dashboard is always the live truth). They show the system doing exactly what it's designed to do: Ingy tops the list by maxing everything a raider personally controls. Eclipz's half-full consumable bar is most of the ~12 points between him and the top five — fixable by Thursday with one trip to the auction house. And Sindarel proves debt is a queue, not a punishment: he does everything right, he's simply been geared hard — every three weeks half of that debt evaporates and he climbs back. Nobody is buried for long.</p>
+  </section>
+
+  <section>
+    <h2>What the council still decides</h2>
+    <p>The score measures <em>standing</em> — who has earned priority. It deliberately does not measure <em>fit</em> — who benefits most from this exact drop. On loot night the council sees both, side by side:</p>
+    <ul>
+      <li><strong>Priority Score</strong> — from the dashboard, sorted.</li>
+      <li><strong>Wishlist rank</strong> — where this item sits on the wishlist you keep via the Discord bot (<code>/wish</code>, or import your WoWSims export). Your list is your voice: rank things honestly and the system argues for you. <strong>Rankings lock at phase start</strong> — after that nobody edits anything: items you win are crossed off automatically from the loot history, and the council reads your remaining ranks as committed at the start of the phase.</li>
+      <li><strong>Upgrade size and raid value</strong> — council judgment, e.g. a throughput weapon during progression.</li>
+    </ul>
+    <div class="callout"><p><strong>The published rule:</strong> among raiders with a legitimate claim, the item goes to the highest Priority Score — unless the council overrides, and every override is logged with a one-line reason anyone can read. Overrides are expected during progression; silent ones are not.</p></div>
+  </section>
+
+  <section>
+    <h2>Where the numbers come from</h2>
+    <figure>
+      <svg viewBox="0 0 760 372" role="img" aria-label="Data flow: Warcraft Logs API, Raid-Helper signups, RCLootCouncil export, and the Discord wishlist bot merge into one dashboard used by the loot council alongside RCLootCouncil voting.">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="10" y="20" width="200" height="64" rx="8"/>
+          <rect x="10" y="108" width="200" height="64" rx="8"/>
+          <rect x="10" y="196" width="200" height="64" rx="8"/>
+          <rect x="10" y="284" width="200" height="64" rx="8"/>
+          <rect x="300" y="152" width="170" height="64" rx="8"/>
+          <rect x="552" y="152" width="198" height="64" rx="8" stroke="var(--accent)" stroke-width="2.2"/>
+        </g>
+        <g stroke="currentColor" stroke-width="1.3" fill="none">
+          <path d="M210 52 C 258 52, 258 166, 298 170" marker-end="url(#arr)"/>
+          <path d="M210 140 C 250 140, 254 176, 298 179" marker-end="url(#arr)"/>
+          <path d="M210 228 C 250 228, 254 192, 298 189" marker-end="url(#arr)"/>
+          <path d="M210 316 C 258 316, 258 202, 298 198" marker-end="url(#arr)"/>
+          <line x1="470" y1="184" x2="550" y2="184" marker-end="url(#arr)"/>
+        </g>
+        <g fill="currentColor" font-family="Albert Sans, sans-serif">
+          <text x="24" y="46" font-size="14" font-weight="600">Warcraft Logs API</text>
+          <text x="24" y="66" font-size="11.5" opacity="0.65">presence + parses + consumables</text>
+          <text x="24" y="134" font-size="14" font-weight="600">Raid-Helper API</text>
+          <text x="24" y="154" font-size="11.5" opacity="0.65">who signed + roster · automated</text>
+          <text x="24" y="222" font-size="14" font-weight="600">RCLootCouncil</text>
+          <text x="24" y="242" font-size="11.5" opacity="0.65">loot history · 2-min export</text>
+          <text x="24" y="310" font-size="14" font-weight="600">Discord wishlist bot</text>
+          <text x="24" y="330" font-size="11.5" opacity="0.65">/wish · always current</text>
+          <text x="314" y="178" font-size="14" font-weight="600">Merge on main</text>
+          <text x="314" y="198" font-size="11.5" opacity="0.65">alts + Discord names roll up</text>
+          <text x="566" y="178" font-size="14" font-weight="600" fill="var(--accent)">Priority dashboard</text>
+          <text x="566" y="198" font-size="11.5" opacity="0.65">open next to RCLC voting</text>
+          <text x="480" y="170" font-size="11" opacity="0.65">scores weekly</text>
+        </g>
+      </svg>
+      <figcaption>Four sources, one join: everything keys on character name, with alts and Discord signup names mapped to mains in a roster table.</figcaption>
+    </figure>
+    <ul>
+      <li><strong>Warcraft Logs</strong> supplies who showed, parse percentiles, and the consumable buffs behind E through its API — no manual work once connected. If you're in the log, you were there.</li>
+      <li><strong>Raid-Helper</strong> supplies who signed and who was rostered. Signed but not selected (or not in the log) → <strong>automatic bench credit</strong>. Rostered but absent from the log → flagged as a <strong>no-show</strong>, which earns nothing. Declared absences are recorded as such.</li>
+      <li><strong>Officers can override any night</strong> — a flaker auto-credited as bench, a missing log, an excused no-show — with a one-line note that shows in the cross-check log. Overrides always win over the automation.</li>
+      <li><strong>RCLootCouncil</strong> remains the in-raid tool. After raid, an officer runs <code>/rc history</code> and exports the week's awards — that's the entire loot-night overhead.</li>
+      <li><strong>Wishlists live in Discord</strong> — <code>/wish add</code>, <code>/wish import</code> (paste a WoWSims export), <code>/wish list</code>. Update yours when your goals change; a stale list only weakens your own case. Officers ask the bot <code>/whowants item</code> and get the wishlisters ranked by live Priority.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Ground rules</h2>
+    <ul>
+      <li><strong>Everything is visible.</strong> Every raider can see their own score, every component of it, and the full award log. If the math is wrong, say so — it gets fixed, not defended.</li>
+      <li><strong>Weights change only between phases.</strong> The formula you start a phase with is the formula it ends with.</li>
+      <li><strong>New joiners</strong> are scored on attendance since their first raid — no trial rank, no handicap. Raiders absent three weeks running are parked as inactive and come back on the list the night they return.</li>
+      <li><strong>Guild-directed gearing</strong> (e.g. force-feeding a tank for progression) still accrues debt — the raider got the items — but the council may halve it when the guild, not the player, chose the target.</li>
+      <li><strong>Alt loot is free — and alts always roll last.</strong> When you're raiding on an alt, it's because the guild needed the role, so items won on the alt cost no debt. The flip side: an alt's claim on any item ranks below every main's legitimate claim, regardless of scores.</li>
+      <li><strong>Legendaries are council-assigned, not won.</strong> The council places them where the raid gains the most. The holder pays major ×1.5 (45 points) — the biggest prize carries the longest shadow.</li>
+      <li><strong>The score ranks people; it never awards items.</strong> The council votes in RCLootCouncil exactly as today.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Where it stands</h2>
+    <ol class="steps">
+      <li><b>Running now</b><p>The pipeline is live on the full season: every 25-man log, 900+ RCLootCouncil awards, Raid-Helper signups and rosters, and consumable data all rebuild the standings with one command. The dashboard shows every component, the signup cross-check, and each raider's full loot ledger on hover.</p></li>
+      <li><b>Wishlists next</b><p>The Discord bot is built — once it's invited to the server, raiders manage wishlists themselves and officers get <code>/whowants</code> live during loot votes.</p></li>
+      <li><b>Then: raiders see this page</b><p>Share this page and the standings so everyone can check their own number — transparency doing the council's PR for it.</p></li>
+    </ol>
+  </section>
+
+  <p class="footnote">Numbers shown (50/15/35 weights, effort split 40/30/20/10, 30-point weapons, 10-point tier tokens, 3-week half-life, ×1.5 legendary debt) are current values, chosen so one major item costs roughly four to six weeks of edge over an equal peer. Every value lives in a config file and history is replayable, so tuning between phases is a one-line change — then leave them alone until the phase ends.</p>
+</div>
