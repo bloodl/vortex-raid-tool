@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex — Officers</title>
+<style>
+  body { margin:0; background:#14111c; color:#e9e5f2; font:16px/1.6 "Segoe UI",system-ui,sans-serif; min-height:100vh; display:grid; place-items:center; }
+  .card { text-align:center; padding:2rem; } h1 { font-size:1.3rem; margin:0 0 1rem; }
+  input { background:#201c2b; border:1px solid #332c44; color:#e9e5f2; border-radius:8px; padding:0.6rem 0.9rem; font-size:1rem; width:16rem; }
+  button { background:#7d36c0; border:0; color:#fff; border-radius:8px; padding:0.62rem 1.1rem; font-size:1rem; margin-left:0.4rem; cursor:pointer; }
+  .err { color:#ff9c9c; min-height:1.4em; margin-top:0.6rem; }
+</style></head><body><div class="card">
+  <h1>🔒 Officer page</h1>
+  <form id="f"><input id="p" type="password" placeholder="passphrase" autofocus><button>Open</button></form>
+  <div class="err" id="e"></div>
+</div>
+<script>
+const DATA = {"s":"Mw7sFK+m8aMVhZS54RBcxg==","i":"87L9pydNYUhd8uJu","c":"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"};
+const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+async function unlock(pass) {
+  const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(DATA.s), iterations: 210000, hash: "SHA-256" }, km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(DATA.i) }, key, b64(DATA.c));
+  return new TextDecoder().decode(pt);
+}
+document.getElementById("f").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const pass = document.getElementById("p").value;
+  try {
+    const html = await unlock(pass);
+    try { sessionStorage.setItem("vortexOfficerKey", pass); } catch {}
+    document.open(); document.write(html); document.close();
+  } catch { document.getElementById("e").textContent = "Wrong passphrase."; }
+});
+(async () => {
+  try {
+    const saved = sessionStorage.getItem("vortexOfficerKey");
+    if (saved) { const html = await unlock(saved); document.open(); document.write(html); document.close(); }
+  } catch { try { sessionStorage.removeItem("vortexOfficerKey"); } catch {} }
+})();
+</script></body></html>
