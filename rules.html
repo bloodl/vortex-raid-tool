@@ -186,14 +186,14 @@
 
   <section>
     <h2>Why a score</h2>
-    <p>Loot council works when people trust it. Right now the inputs to that trust — who shows up, who performs, who was geared last month — live in three different tools and in officers' heads. The Priority Score pulls those inputs into one standing number per raider, recomputed weekly. It doesn't replace the council's judgment on any single item; it replaces the arguing about whose turn it is.</p>
+    <p>Loot council works when people trust it. Right now the inputs to that trust — who shows up, who performs, who was geared last month — live in three different tools and in officers' heads. The Priority Score pulls those inputs into one standing number per raider, recomputed automatically every night. It doesn't replace the council's judgment on any single item; it replaces the arguing about whose turn it is.</p>
   </section>
 
   <section>
     <h2>The score</h2>
     <div class="formula">Priority = (50·<span class="t-a">A</span> + 15·<span class="t-p">P</span> + 35·<span class="t-e">E</span>) × <span class="t-m">M</span> − <span class="t-d">D</span></div>
     <div class="terms">
-      <div class="term"><b><span style="color:var(--q-blue)">A</span> — Attendance</b><p>Share of the last 8 raid resets you attended. Signing up and getting benched counts as attending — sitting for the guild never costs you priority. Getting rostered and not showing counts as nothing.</p></div>
+      <div class="term"><b><span style="color:var(--q-blue)">A</span> — Attendance</b><p>Share of the last 8 raid resets you attended. Signing up and getting benched counts as attending — sitting for the guild never costs you priority. Getting rostered and not showing counts as nothing; signing tentative and not showing earns half a night.</p></div>
       <div class="term"><b><span style="color:var(--q-legend)">P</span> — Performance</b><p>Your median Warcraft Logs percentile over the last 4 resets, in your item-level bracket. Median, not best — one lucky parse doesn't move it. Tanks and healers are scored flat at 75 — tanking doesn't parse, and healing parses mostly measure who sniped the overheals.</p></div>
       <div class="term"><b><span style="color:var(--q-teal)">E</span> — Effort</b><p>Consumable use on boss kills over the last 4 resets: potions weigh most, then flask/elixirs, food, and scrolls. Fully in your own hands, unlike a parse — which is why it outweighs one.</p></div>
       <div class="term"><b><span style="color:var(--q-green)">M</span> — Rank</b><p>Every current raider is ×1.0 — we run no trials. The knob exists in the config for the day we want one.</p></div>
@@ -269,7 +269,7 @@
   <section>
     <h2>Where the numbers come from</h2>
     <figure>
-      <svg viewBox="0 0 760 372" role="img" aria-label="Data flow: Warcraft Logs API, Raid-Helper signups, RCLootCouncil export, and the Discord wishlist bot merge into one dashboard used by the loot council alongside RCLootCouncil voting.">
+      <svg viewBox="0 0 760 372" role="img" aria-label="Data flow: Warcraft Logs API, Raid-Helper signups, RCLootCouncil history read from the game files, and the Discord wishlist bot merge into one dashboard used by the loot council alongside RCLootCouncil voting.">
         <defs>
           <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -296,14 +296,14 @@
           <text x="24" y="134" font-size="14" font-weight="600">Raid-Helper API</text>
           <text x="24" y="154" font-size="11.5" opacity="0.65">who signed + roster · automated</text>
           <text x="24" y="222" font-size="14" font-weight="600">RCLootCouncil</text>
-          <text x="24" y="242" font-size="11.5" opacity="0.65">loot history · 2-min export</text>
+          <text x="24" y="242" font-size="11.5" opacity="0.65">loot history · read automatically</text>
           <text x="24" y="310" font-size="14" font-weight="600">Discord wishlist bot</text>
           <text x="24" y="330" font-size="11.5" opacity="0.65">/wish · always current</text>
           <text x="314" y="178" font-size="14" font-weight="600">Merge on main</text>
           <text x="314" y="198" font-size="11.5" opacity="0.65">alts + Discord names roll up</text>
           <text x="566" y="178" font-size="14" font-weight="600" fill="var(--accent)">Priority dashboard</text>
           <text x="566" y="198" font-size="11.5" opacity="0.65">open next to RCLC voting</text>
-          <text x="480" y="170" font-size="11" opacity="0.65">scores weekly</text>
+          <text x="480" y="170" font-size="11" opacity="0.65">rebuilt nightly</text>
         </g>
       </svg>
       <figcaption>Four sources, one join: everything keys on character name, with alts and Discord signup names mapped to mains in a roster table.</figcaption>
@@ -312,7 +312,7 @@
       <li><strong>Warcraft Logs</strong> supplies who showed, parse percentiles, and the consumable buffs behind E through its API — no manual work once connected. If you're in the log, you were there.</li>
       <li><strong>Raid-Helper</strong> supplies who signed and who was rostered. Signed but not selected (or not in the log) → <strong>automatic bench credit</strong>. Rostered but absent from the log → flagged as a <strong>no-show</strong>, which earns nothing. Declared absences are recorded as such.</li>
       <li><strong>Officers can override any night</strong> — a flaker auto-credited as bench, a missing log, an excused no-show — with a one-line note that shows in the cross-check log. Overrides always win over the automation.</li>
-      <li><strong>RCLootCouncil</strong> remains the in-raid tool. After raid, an officer runs <code>/rc history</code> and exports the week's awards — that's the entire loot-night overhead.</li>
+      <li><strong>RCLootCouncil</strong> remains the in-raid tool. Its history is read straight from the game's saved data every night — no exports, no spreadsheets, no loot-night bookkeeping at all.</li>
       <li><strong>Wishlists live in Discord</strong> — <code>/wish add</code>, <code>/wish import</code> (paste a WoWSims export), <code>/wish list</code>. Update yours when your goals change; a stale list only weakens your own case. Officers ask the bot <code>/whowants item</code> and get the wishlisters ranked by live Priority.</li>
     </ul>
   </section>
