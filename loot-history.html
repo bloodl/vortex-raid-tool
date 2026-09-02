@@ -12,7 +12,7 @@
   input[type=text] { background: #201c2b; border: 1px solid #332c44; color: #e9e5f2; border-radius: 8px; padding: 0.5rem 0.8rem; font-size: 0.95rem; width: 20rem; max-width: 100%; }
   label { color: #9d94b3; font-size: 0.9rem; user-select: none; }
   .tablewrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 0.92rem; table-layout: fixed; }
   th { text-align: left; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: #9d94b3;
        padding: 0.5rem 0.7rem; border-bottom: 2px solid #332c44; white-space: nowrap; cursor: pointer; }
   th:hover { color: #e9e5f2; }
@@ -24,13 +24,14 @@
   tr[hidden] { display: none; }
 </style></head><body><div class="page">
   <h1>Vortex — Loot History</h1>
-  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/2/2026, 4:40:19 PM · click a column to sort</p>
+  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/2/2026, 4:43:00 PM · click a column to sort</p>
   <div class="bar">
     <input id="q" type="text" placeholder="filter: player, item, boss, selection…">
     <label><input id="showfree" type="checkbox"> show disenchants &amp; free rolls</label>
     <span class="muted" id="count"></span>
   </div>
   <div class="tablewrap"><table id="t">
+    <colgroup><col style="width:6.4rem"><col style="width:8.8rem"><col><col style="width:11.5rem"><col style="width:10.5rem"><col style="width:6rem"><col style="width:3.8rem"></colgroup>
     <thead><tr>
       <th data-i="0" data-d="desc">Date <span class="dir">▼</span></th>
       <th data-i="1">Player <span class="dir"></span></th>
