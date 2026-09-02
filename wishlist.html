@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex — My Wishlist</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14111c; color: #e9e5f2; font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  .page { max-width: 640px; margin: 0 auto; padding: 1.6rem 14px 4rem; }
+  h1 { font-size: 1.3rem; margin: 0 0 0.2rem; }
+  .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
+  .card { background: #1b1726; border: 1px solid #2a2438; border-radius: 12px; padding: 0.9rem; margin: 0.8rem 0; }
+  .row { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.55rem; border-radius: 9px; background: #201c2b; border: 1px solid #2e2740; margin: 0.3rem 0; }
+  .row.drag { opacity: 0.4; }
+  .row .nm { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .slot { color: #9d94b3; font-size: 0.78rem; }
+  .row .rk { color: #b678f0; font-weight: 700; width: 1.6rem; text-align: right; flex: none; }
+  .row.won { opacity: 0.5; } .row.won .nm { text-decoration: line-through; }
+  button { background: #2a2438; color: #e9e5f2; border: 1px solid #3a3350; border-radius: 8px; padding: 0.3rem 0.55rem; font-size: 0.9rem; cursor: pointer; flex: none; }
+  button:hover { background: #332c44; }
+  button.x { color: #ff8f8f; }
+  .grip { cursor: grab; color: #6f6790; flex: none; padding: 0 0.15rem; }
+  input, textarea { width: 100%; background: #201c2b; border: 1px solid #332c44; color: #e9e5f2; border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.95rem; }
+  textarea { min-height: 7rem; font-family: ui-monospace, monospace; font-size: 0.8rem; }
+  .res { border: 1px solid #332c44; border-radius: 8px; margin-top: 0.4rem; overflow: hidden; }
+  .res div { padding: 0.45rem 0.7rem; cursor: pointer; border-bottom: 1px solid #2a2438; }
+  .res div:last-child { border-bottom: 0; }
+  .res div:hover { background: #2a2438; }
+  .status { position: fixed; bottom: 0.8rem; right: 1rem; background: #1b1726; border: 1px solid #3a3350; border-radius: 999px; padding: 0.25rem 0.9rem; font-size: 0.85rem; opacity: 0; transition: opacity 0.25s; }
+  .status.show { opacity: 1; }
+  .lockbar { background: #2c2340; border: 1px solid #b678f055; color: #d5b8f5; border-radius: 10px; padding: 0.6rem 0.9rem; font-size: 0.9rem; margin: 0.8rem 0; }
+  .err { background: #3a2030; border: 1px solid #ff8f8f55; color: #ffb8b8; border-radius: 10px; padding: 0.7rem 0.9rem; margin: 0.8rem 0; }
+  details summary { cursor: pointer; color: #b8aed3; font-size: 0.9rem; }
+  .hint b { color: #cfc7e2; }
+</style></head><body><div class="page">
+  <h1>⚔️ My wishlist</h1>
+  <p class="sub" id="who">Loading…</p>
+  <div id="app"></div>
+  <div class="status" id="status"></div>
+<script>
+"use strict";
+var API = "" || location.origin;
+var token = null;
+try {
+  var m = location.hash.match(/t=([0-9a-f]{32})/);
+  if (m) { token = m[1]; sessionStorage.setItem("wishtoken", token); history.replaceState(null, "", location.pathname); }
+  else token = sessionStorage.getItem("wishtoken");
+} catch (e) { var m2 = location.hash.match(/t=([0-9a-f]{32})/); token = m2 ? m2[1] : null; }
+
+var state = null;
+var app = document.getElementById("app");
+var whoEl = document.getElementById("who");
+var statusEl = document.getElementById("status");
+var saveTimer = null;
+
+function flash(text, sticky) {
+  statusEl.textContent = text;
+  statusEl.classList.add("show");
+  if (!sticky) setTimeout(function () { statusEl.classList.remove("show"); }, 1800);
+}
+function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+
+function api(pathName, opts) {
+  return fetch(API + pathName, opts).then(function (r) {
+    return r.json().then(function (j) {
+      if (r.status === 401) { fail("This link has expired (they last 1 hour). Ask the bot for a fresh one: <b>/wish web</b> in Discord."); throw new Error("expired"); }
+      if (r.status === 423) { j.locked = true; return j; }
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      return j;
+    });
+  });
+}
+
+function fail(html) {
+  whoEl.textContent = "";
+  app.innerHTML = '<div class="err">' + html + "</div>";
+}
+
+function queueSave() {
+  if (!state || state.locked) return;
+  clearTimeout(saveTimer);
+  flash("Saving…", true);
+  saveTimer = setTimeout(function () {
+    api("/api/wishlist", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token: token, ids: state.items.map(function (i) { return i.id; }) }),
+    }).then(function (j) { state = j; render(); flash("Saved ✓"); })
+      .catch(function (e) { if (e.message !== "expired") flash("Save failed: " + e.message, true); });
+  }, 700);
+}
+
+function move(idx, dir) {
+  var j = idx + dir;
+  if (j < 0 || j >= state.items.length) return;
+  var t = state.items[idx]; state.items[idx] = state.items[j]; state.items[j] = t;
+  render(); queueSave();
+}
+function removeAt(idx) { state.items.splice(idx, 1); render(); queueSave(); }
+
+var dragIdx = null;
+function render() {
+  whoEl.innerHTML = state.main
+    ? "<b>" + esc(state.main) + "</b> — " + state.items.length + " item(s), 1 = want it most" + (state.updated ? " · updated " + esc(state.updated) : "")
+    : "Not on the roster yet — your list still saves under your Discord account.";
+  var h = "";
+  if (state.locked) {
+    h += '<div class="lockbar">🔒 Rankings are locked' + (state.phase ? " for <b>" + esc(state.phase) + "</b>" : "") +
+      (state.lockedAt ? " (since " + esc(state.lockedAt) + ")" : "") +
+      " — nothing can be changed. Items you win are crossed off automatically.</div>';
+  }
+  h += '<div class="card" id="list">';
+  if (!state.items.length) h += '<p class="muted">Nothing here yet — search below to add items, or paste a WoWSims / Sixty Upgrades export.</p>';
+  for (var k = 0; k < state.items.length; k++) {
+    var it = state.items[k];
+    h += '<div class="row' + (it.won ? " won" : "") + '" draggable="' + (!state.locked) + '" data-i="' + k + '">' +
+      (state.locked ? "" : '<span class="grip">⠿</span>') +
+      '<span class="rk">' + (k + 1) + '.</span>' +
+      '<span class="nm">' + esc(it.name) + (it.slot ? ' <span class="slot">[' + esc(it.slot) + "]</span>" : "") + (it.won ? " ✔ won" : "") + "</span>" +
+      (state.locked ? "" : '<button onclick="move(' + k + ',-1)" title="up">▲</button><button onclick="move(' + k + ',1)" title="down">▼</button><button class="x" onclick="removeAt(' + k + ')" title="remove">✕</button>') +
+      "</div>";
+  }
+  h += "</div>";
+  if (!state.locked) {
+    h += '<div class="card"><input id="q" placeholder="Search items to add… (e.g. Softstep, Cataclysm)" autocomplete="off"><div class="res" id="res" hidden></div></div>';
+    h += '<div class="card"><details' + (state.items.length ? "" : " open") + '><summary>Import from WoWSims / Sixty Upgrades (replaces the whole list)</summary>' +
+      '<p class="sub hint">In the planner: <b>Export → JSON</b>, paste it here.</p>' +
+      '<textarea id="imp" placeholder=\'{"items": …}\'></textarea>' +
+      '<p><button onclick="doImport()">Import</button></p></details></div>';
+  }
+  app.innerHTML = h;
+  if (!state.locked) {
+    wireSearch();
+    wireDrag();
+  }
+}
+
+function wireDrag() {
+  var rows = app.querySelectorAll(".row");
+  rows.forEach(function (row) {
+    row.addEventListener("dragstart", function () { dragIdx = +row.dataset.i; row.classList.add("drag"); });
+    row.addEventListener("dragend", function () { row.classList.remove("drag"); });
+    row.addEventListener("dragover", function (e) { e.preventDefault(); });
+    row.addEventListener("drop", function (e) {
+      e.preventDefault();
+      var to = +row.dataset.i;
+      if (dragIdx === null || dragIdx === to) return;
+      var it = state.items.splice(dragIdx, 1)[0];
+      state.items.splice(to, 0, it);
+      dragIdx = null;
+      render(); queueSave();
+    });
+  });
+}
+
+function wireSearch() {
+  var q = document.getElementById("q"), res = document.getElementById("res");
+  var t = null;
+  q.addEventListener("input", function () {
+    clearTimeout(t);
+    var v = q.value.trim();
+    if (v.length < 2) { res.hidden = true; return; }
+    t = setTimeout(function () {
+      api("/api/search?token=" + token + "&q=" + encodeURIComponent(v)).then(function (j) {
+        var have = {};
+        state.items.forEach(function (i) { have[i.id] = 1; });
+        var list = (j.results || []).filter(function (r) { return !have[r.id]; }).slice(0, 10);
+        if (!list.length) { res.hidden = true; return; }
+        res.innerHTML = list.map(function (r, k) {
+          return '<div data-k="' + k + '">' + esc(r.name) + ' <span class="muted">[' + esc(r.slot) + "]</span></div>";
+        }).join("");
+        res.hidden = false;
+        res.querySelectorAll("div[data-k]").forEach(function (d) {
+          d.addEventListener("click", function () {
+            var r = list[+d.dataset.k];
+            state.items.push({ id: r.id, name: r.name, slot: r.slot || null, won: false });
+            q.value = ""; res.hidden = true;
+            render(); queueSave();
+          });
+        });
+      }).catch(function () {});
+    }, 250);
+  });
+}
+
+function doImport() {
+  var text = document.getElementById("imp").value;
+  if (!text.trim()) return;
+  if (state.items.length && !confirm("Import replaces your whole list (" + state.items.length + " items). Continue?")) return;
+  flash("Importing…", true);
+  api("/api/import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token: token, text: text }) })
+    .then(function (j) {
+      if (j.locked) { flash("Locked — no changes allowed", true); return; }
+      state = j; render(); flash("Imported ✓ — now drag into your priority order");
+    })
+    .catch(function (e) { if (e.message !== "expired") flash(e.message, true); });
+}
+
+if (!API || API.indexOf("http") !== 0) {
+  fail("Web editing isn't switched on yet — manage your list in the bot's DMs (<b>/wish list</b>) for now.");
+} else if (!token) {
+  fail("No access link. In Discord, DM the bot <b>/wish web</b> — it replies with a personal 1-hour link to this page.");
+} else {
+  api("/api/wishlist?token=" + token)
+    .then(function (j) { state = j; render(); })
+    .catch(function (e) { if (e.message !== "expired") fail("Couldn't reach the wishlist server (" + esc(e.message) + "). It runs on the guild PC — try again in a bit, or use <b>/wish list</b> in the bot's DMs."); });
+}
+</script></div></body></html>
