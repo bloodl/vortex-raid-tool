@@ -195,7 +195,7 @@
     <div class="terms">
       <div class="term"><b><span style="color:var(--q-blue)">A</span> — Attendance</b><p>Share of the last 8 raid resets you attended. Signing up and getting benched counts as attending — sitting for the guild never costs you priority. Getting rostered and not showing counts as nothing; signing tentative and not showing earns half a night.</p></div>
       <div class="term"><b><span style="color:var(--q-legend)">P</span> — Performance</b><p>Your median Warcraft Logs percentile over the last 4 resets, in your item-level bracket. Median, not best — one lucky parse doesn't move it. Tanks and healers are scored flat at 75 — tanking doesn't parse, and healing parses mostly measure who sniped the overheals.</p></div>
-      <div class="term"><b><span style="color:var(--q-teal)">E</span> — Effort</b><p>Consumable use on boss kills over the last 4 resets: potions weigh most, then flask/elixirs, food, and scrolls. Fully in your own hands, unlike a parse — which is why it outweighs one.</p></div>
+      <div class="term"><b><span style="color:var(--q-teal)">E</span> — Effort</b><p>Consumable use on boss kills over the last 4 resets: potions and flask/elixirs weigh most, then food and scrolls. Fully in your own hands, unlike a parse — which is why it outweighs one.</p></div>
       <div class="term"><b><span style="color:var(--q-green)">M</span> — Rank</b><p>Every current raider is ×1.0 — we run no trials. The knob exists in the config for the day we want one.</p></div>
       <div class="term"><b><span style="color:var(--q-epic)">D</span> — Loot debt</b><p>Points for items you've recently won, fading by half every 3 weeks. Big wins push you down the list for a few resets, then age out.</p></div>
     </div>
@@ -204,15 +204,15 @@
 
   <section>
     <h2>Effort, measured</h2>
-    <p>E is read straight out of the combat log for boss kills — no screenshots, no consume checks at the raid entrance. Each raid night scores four things, potions first:</p>
+    <p>E is read straight out of the combat log for boss kills — no screenshots, no consume checks at the raid entrance. Each raid night scores four things:</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Component</th><th>Full credit for</th><th class="num">Weight</th></tr></thead>
         <tbody>
-          <tr><td><strong>Potions</strong></td><td>One potion per boss kill, on average — haste, destruction, ironshield, mana, or protection potions (shadow pots on Mother Shahraz count).</td><td class="num">40%</td></tr>
+          <tr><td><strong>Potions</strong></td><td>One potion per boss kill, on average — haste, destruction, ironshield, mana, or protection potions (shadow pots on Mother Shahraz count).</td><td class="num">30%</td></tr>
           <tr><td><strong>Flask</strong></td><td>A flask — Shattrath and Chromatic Wonder variants included — or a battle + guardian elixir pair, up 75%+ of kill time. A single elixir earns half.</td><td class="num">30%</td></tr>
           <tr><td><strong>Food</strong></td><td>A Well Fed buff up 75%+ of kill time.</td><td class="num">20%</td></tr>
-          <tr><td><strong>Scrolls</strong></td><td>An Agility or Strength scroll up 75%+ of kill time. <strong>Melee DPS and hunters only</strong> — caster scrolls collide with raid buffs, so casters, healers, and tanks are scored on the other three components alone.</td><td class="num">10%</td></tr>
+          <tr><td><strong>Scrolls</strong></td><td>An Agility or Strength scroll up 75%+ of kill time. <strong>Melee DPS and hunters only</strong> — caster scrolls collide with raid buffs, so casters, healers, and tanks are scored on the other three components alone.</td><td class="num">20%</td></tr>
         </tbody>
       </table>
     </div>
@@ -331,5 +331,5 @@
   </section>
 
 
-  <p class="footnote">Numbers shown (50/15/35 weights, effort split 40/30/20/10, 30-point weapons, 10-point tier tokens, 3-week half-life, ×1.5 legendary debt) are current values, chosen so one major item costs roughly four to six weeks of edge over an equal peer. Every value lives in a config file and history is replayable, so tuning between phases is a one-line change — then leave them alone until the phase ends.</p>
+  <p class="footnote">Numbers shown (50/15/35 weights, effort split 30/30/20/20, 30-point weapons, 10-point tier tokens, 3-week half-life, ×1.5 legendary debt) are current values, chosen so one major item costs roughly four to six weeks of edge over an equal peer. Every value lives in a config file and history is replayable, so tuning between phases is a one-line change — then leave them alone until the phase ends.</p>
 </div>
