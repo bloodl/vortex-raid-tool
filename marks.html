@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex — Marks Tracker</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14111c; color: #e9e5f2; font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  .page { max-width: 560px; margin: 0 auto; padding: 1.6rem 14px 4rem; }
+  h1 { font-size: 1.3rem; margin: 0 0 0.2rem; }
+  .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
+  .card { background: #1b1726; border: 1px solid #2a2438; border-radius: 12px; padding: 0.9rem; margin: 0.8rem 0; }
+  .row { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.6rem; border-radius: 9px; background: #201c2b; border: 1px solid #2e2740; margin: 0.35rem 0; }
+  .row .nm { flex: 1 1 auto; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .row .st { color: #9d94b3; font-size: 0.8rem; flex: none; }
+  button { background: #2a2438; color: #e9e5f2; border: 1px solid #3a3350; border-radius: 8px; padding: 0.45rem 0.8rem; font-size: 0.9rem; cursor: pointer; flex: none; }
+  button:hover { background: #332c44; }
+  button.give { border-color: #7fd98c66; color: #a9e8b2; }
+  button.undo { color: #9d94b3; font-size: 0.78rem; padding: 0.25rem 0.55rem; }
+  input, select { background: #201c2b; border: 1px solid #332c44; color: #e9e5f2; border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.95rem; width: 100%; }
+  .gate label { display: block; font-size: 0.8rem; color: #9d94b3; margin: 0.7rem 0 0.25rem; }
+  .err { background: #3a2030; border: 1px solid #ff8f8f55; color: #ffb8b8; border-radius: 10px; padding: 0.7rem 0.9rem; margin: 0.8rem 0; }
+  .status { position: fixed; bottom: 0.8rem; right: 1rem; background: #1b1726; border: 1px solid #3a3350; border-radius: 999px; padding: 0.25rem 0.9rem; font-size: 0.85rem; opacity: 0; transition: opacity 0.25s; }
+  .status.show { opacity: 1; }
+  .tot { font-size: 0.85rem; color: #9d94b3; }
+  .walkrow { display: flex; gap: 0.5rem; align-items: center; }
+</style></head><body><div class="page">
+  <h1>🎖 Marks of the Illidari</h1>
+  <p class="sub" id="who">Officer tracker — separate from loot priority.</p>
+  <div id="app"></div>
+  <div class="status" id="status"></div>
+<script>
+"use strict";
+var API = "https://enr.tail10d5e9.ts.net" || location.origin;
+var KEY = null, BY = null, state = null;
+try { KEY = sessionStorage.getItem("markskey"); BY = sessionStorage.getItem("marksby"); } catch (e) {}
+
+var app = document.getElementById("app");
+var whoEl = document.getElementById("who");
+var statusEl = document.getElementById("status");
+
+function flash(text, sticky) {
+  statusEl.textContent = text;
+  statusEl.classList.add("show");
+  if (!sticky) setTimeout(function () { statusEl.classList.remove("show"); }, 1800);
+}
+function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+
+function gate(msg) {
+  state = null;
+  app.innerHTML = '<div class="card gate">' + (msg ? '<div class="err">' + esc(msg) + '</div>' : '') +
+    '<label>Officer passphrase</label><input id="g-key" type="password" autocomplete="current-password">' +
+    '<label>Your name (logged on each hand-out)</label><input id="g-by" maxlength="24">' +
+    '<p style="margin:1rem 0 0"><button class="give" id="g-go">Open tracker</button></p></div>';
+  if (BY) document.getElementById("g-by").value = BY;
+  var go = function () {
+    KEY = document.getElementById("g-key").value;
+    BY = document.getElementById("g-by").value.trim() || "officer";
+    try { sessionStorage.setItem("markskey", KEY); sessionStorage.setItem("marksby", BY); } catch (e) {}
+    load();
+  };
+  document.getElementById("g-go").addEventListener("click", go);
+  document.getElementById("g-key").addEventListener("keydown", function (e) { if (e.key === "Enter") go(); });
+}
+
+function api(opts) {
+  var req = opts.post
+    ? fetch(API + "/api/marks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ key: KEY, by: BY }, opts.post)) })
+    : fetch(API + "/api/marks?key=" + encodeURIComponent(KEY || ""));
+  return req.then(function (r) {
+    return r.json().then(function (j) {
+      if (r.status === 403) { gate("Wrong passphrase."); throw new Error("auth"); }
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      return j;
+    });
+  });
+}
+
+function act(action, main) {
+  api({ post: { action: action, main: main } })
+    .then(function (j) { state = j; render(); flash(action === "undo" ? "Un-ticked" : "Handed out ✓"); })
+    .catch(function (e) { if (e.message !== "auth") flash(e.message, true); });
+}
+
+function render() {
+  var cost = state.perLockout * state.goldEach;
+  whoEl.innerHTML = "Lockout <b>" + esc(state.lockout) + "</b> (Wed–Tue) — " + state.perLockout + " marks per raider, " + state.goldEach + "g each (" + cost + "g total). Signed in as <b>" + esc(BY) + "</b>.";
+  var h = '<div class="card">';
+  if (!state.rows.length) h += '<p class="muted">No requests yet this lockout — raiders use /mark request in Discord, or add a walk-up below.</p>';
+  for (var k = 0; k < state.rows.length; k++) {
+    var r = state.rows[k];
+    h += '<div class="row"><span>' + (r.fulfilled ? "✅" : "⏳") + '</span><span class="nm">' + esc(r.main) + (r.walkUp ? ' <span class="st">(walk-up)</span>' : '') + '</span>' +
+      '<span class="st">' + (r.fulfilled ? 'by ' + esc(r.fulfilledBy || '?') : 'waiting') + '</span>' +
+      (r.fulfilled
+        ? '<button class="undo" data-act="undo" data-k="' + k + '">undo</button>'
+        : '<button class="give" data-act="given" data-k="' + k + '">✓ ' + cost + 'g</button>') +
+      '</div>';
+  }
+  h += '</div>';
+  var listed = {};
+  state.rows.forEach(function (r) { listed[r.main.toLowerCase()] = 1; });
+  var opts = (state.roster || []).filter(function (n) { return !listed[n.toLowerCase()]; })
+    .map(function (n) { return '<option>' + esc(n) + '</option>'; }).join('');
+  h += '<div class="card"><div class="walkrow"><select id="walk"><option value="">Walk-up (no request)…</option>' + opts + '</select><button class="give" id="walkgo">✓ Give</button></div></div>';
+  if (state.totals && state.totals.length) {
+    h += '<p class="tot">All-time: ' + state.totals.map(function (t) { return esc(t.main) + ' ' + t.marks; }).join(' · ') + '</p>';
+  }
+  app.innerHTML = h;
+  app.querySelectorAll('button[data-act]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var row = state.rows[+b.dataset.k];
+      if (row) act(b.dataset.act, row.main);
+    });
+  });
+  var wg = document.getElementById('walkgo');
+  if (wg) wg.addEventListener('click', function () {
+    var w = document.getElementById('walk').value;
+    if (w) act('given', w);
+  });
+}
+
+function load() {
+  api({}).then(function (j) { state = j; render(); })
+    .catch(function (e) {
+      if (e.message !== 'auth') {
+        whoEl.textContent = '';
+        app.innerHTML = '<div class="err">Tracker server unreachable (' + esc(e.message) + ') — it runs on the guild PC. Try again in a bit, or use /mark in Discord.</div>';
+      }
+    });
+}
+
+if (!API || API.indexOf('http') !== 0) {
+  app.innerHTML = '<div class="err">Web tracker not switched on — use /mark in Discord.</div>';
+} else if (KEY) { load(); } else { gate(); }
+setInterval(function () { if (state && KEY && !document.hidden) load(); }, 25000);
+</script></div></body></html>
