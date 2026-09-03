@@ -160,17 +160,19 @@ function wireSearch() {
     t = setTimeout(function () {
       api("/api/search?token=" + token + "&q=" + encodeURIComponent(v)).then(function (j) {
         var have = {};
-        state.items.forEach(function (i) { have[i.id] = 1; });
-        var list = (j.results || []).filter(function (r) { return !have[r.id]; }).slice(0, 10);
+        state.items.forEach(function (i) { have[i.id] = (have[i.id] || 0) + 1; });
+        // Non-unique rings can be picked twice (two ring slots), all else once.
+        var list = (j.results || []).filter(function (r) { return (have[r.id] || 0) < (r.stack2 ? 2 : 1); }).slice(0, 10);
         if (!list.length) { res.hidden = true; return; }
         res.innerHTML = list.map(function (r, k) {
-          return '<div data-k="' + k + '">' + esc(r.name) + ' <span class="muted">[' + esc(r.slot) + "]</span></div>";
+          var extra = r.stack2 && have[r.id] ? ' <span class="muted">(second copy)</span>' : "";
+          return '<div data-k="' + k + '">' + esc(r.name) + ' <span class="muted">[' + esc(r.slot) + "]</span>" + extra + "</div>";
         }).join("");
         res.hidden = false;
         res.querySelectorAll("div[data-k]").forEach(function (d) {
           d.addEventListener("click", function () {
             var r = list[+d.dataset.k];
-            state.items.push({ id: r.id, name: r.name, slot: r.slot || null, won: false });
+            state.items.push({ id: r.id, name: r.name, slot: r.slot || null, won: false, stack2: r.stack2 });
             q.value = ""; res.hidden = true;
             render(); queueSave();
           });
