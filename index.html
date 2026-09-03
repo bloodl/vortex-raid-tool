@@ -15,7 +15,21 @@
   a:hover { border-color: #b678f0; }
   small { color: #9d94b3; font-weight: 400; display: block; margin-top: 0.15rem; }
 </style></head>
-<body><div class="card">
+<body>
+<style>
+  body { display: block; }
+  .homewrap { min-height: calc(100vh - 48px); display: grid; place-items: center; }
+  .topnav { display: flex; flex-wrap: wrap; gap: 0.1rem; align-items: center; background: #171420;
+            border-bottom: 1px solid #2a2438; padding: 0.4rem 0.8rem;
+            font: 600 13px/1 "Segoe UI", system-ui, sans-serif; }
+  .topnav .tn-logo { width: 22px; height: 22px; border-radius: 50%; margin-right: 0.45rem; flex: none; }
+  .topnav a { display: inline; margin: 0; max-width: none; color: #b8aed3; text-decoration: none; padding: 0.45rem 0.6rem;
+              border-radius: 7px; white-space: nowrap; background: none; border: 0; font-weight: 600; }
+  .topnav a:hover { background: #241f31; color: #e9e5f2; }
+  .topnav a.on { color: #b678f0; background: #241f31; }
+</style>
+<nav class="topnav"><img class="tn-logo" src="icon.png" alt=""><a href="index.html" class="on">Home</a><a href="rules.html">Rules</a><a href="loot-history.html">Loot History</a><a href="wishlist.html">Wishlist</a><a href="api.html">Commands</a><a href="dashboard.html">Standings 🔒</a><a href="officers.html">Officers 🔒</a><a href="marks.html">Marks 🔒</a></nav>
+<div class="homewrap"><div class="card">
   <img class="logo" src="icon.png" alt="Vortex crossed blades">
   <h1>Vortex — Loot Priority</h1>
   <p>Thunderstrike EU · TBC Anniversary</p>
@@ -26,4 +40,4 @@
   <a href="dashboard.html">Live Standings 🔒<small>updated nightly at 23:45 — passphrase required</small></a>
   <a href="officers.html">Officer View 🔒<small>wishlists × Priority — passphrase required</small></a>
   <a href="marks.html">Marks Tracker 🔒<small>Marks of the Illidari hand-outs — officer passphrase</small></a>
-</div></body></html>
+</div></div></body></html>
