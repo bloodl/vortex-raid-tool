@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex — Commands &amp; API</title>
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14111c; color: #e9e5f2; font: 15px/1.55 "Segoe UI", system-ui, sans-serif; padding: 0 16px; }
+  .page { max-width: 880px; margin: 0 auto; padding: 2.2rem 0 4rem; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.2rem; }
+  h2 { font-size: 1.1rem; margin: 2.2rem 0 0.6rem; color: #cfc7e2; }
+  .sub { color: #9d94b3; margin: 0 0 1.2rem; font-size: 0.9rem; }
+  .muted { color: #9d94b3; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  td { padding: 0.5rem 0.7rem; border-bottom: 1px solid #2a2438; vertical-align: top; }
+  td:first-child { white-space: nowrap; width: 17rem; }
+  code { font-family: Consolas, ui-monospace, monospace; font-size: 0.86em; background: #241f31; border: 1px solid #332c44; border-radius: 5px; padding: 0.08em 0.4em; }
+  a { color: #b678f0; }
+  .chip { display: inline-block; border: 1px solid #3a3350; border-radius: 999px; padding: 0.05rem 0.6rem; font-size: 0.75rem; color: #b8aed3; margin-left: 0.4rem; vertical-align: 2px; }
+  .lock { color: #ffd479; }
+  .tablewrap { overflow-x: auto; }
+</style></head><body><div class="page">
+  <h1>📖 Commands &amp; API</h1>
+  <p class="sub">Everything LootBot answers to. Member commands work anywhere — best in a DM with the bot; replies are private either way. Officer commands need the <b>Management</b> Discord role (checked live, DMs included).</p>
+
+  <h2>Discord — everyone</h2>
+  <div class="tablewrap"><table><tbody>
+    <tr><td><code>/help</code></td><td>This list, inside Discord.</td></tr>
+    <tr><td><code>/wish import</code></td><td>Replace your wishlist from a WoWSims or Sixty Upgrades <b>Export → JSON</b> (gems/enchants filtered out). Lands in sim order — rank it afterwards.</td></tr>
+    <tr><td><code>/wish add &lt;item&gt;</code></td><td>Add one item — instant autocomplete from the local item database, Wowhead links and IDs work too. Non-unique rings (the BT trash bands) can be added <b>twice</b>; unique/unique-equipped stay single.</td></tr>
+    <tr><td><code>/wish remove · /wish clear</code></td><td>Take one item off, or wipe the list.</td></tr>
+    <tr><td><code>/wish list</code></td><td>Your ranked list (1 = want it most) with reorder menus. Won items show struck through — crossed off automatically from the loot history, never deleted.</td></tr>
+    <tr><td><code>/wish rank &lt;item&gt; &lt;position&gt;</code></td><td>Jump an item straight to a rank.</td></tr>
+    <tr><td><code>/wish web</code></td><td>A personal <b>1-hour link</b> to the <a href='wishlist.html'>browser editor</a> — drag &amp; drop reorder, search-to-add, paste an export to build from scratch. The link is the login.</td></tr>
+    <tr><td><code>/prio</code></td><td>Your own standing line: Priority, attendance, parses, debt.</td></tr>
+    <tr><td><code>/mark request</code></td><td>Request your 2 Marks of the Illidari for this lockout (Wed–Tue) — bring 20g (10g each). Once per lockout.</td></tr>
+    <tr><td><code>/mark cancel</code></td><td>Withdraw a pending request this lockout.</td></tr>
+    <tr><td><code>/mark list</code></td><td>This lockout's queue — who's waiting ⏳, who's been served ✅.</td></tr>
+    <tr><td><code>/mark history [name]</code></td><td>All-time marks handed out — totals, or one raider's full log.</td></tr>
+  </tbody></table></div>
+
+  <h2>Discord — officers <span class="chip">Management role</span></h2>
+  <div class="tablewrap"><table><tbody>
+    <tr><td><code>/whowants &lt;item&gt;</code></td><td>Everyone with the item still open on their wishlist, Priority order, with a debt preview per candidate (&quot;if won (−30): 50.1 #9&quot;). Tier tokens match set-piece listers; recipes match crafted-item listers.</td></tr>
+    <tr><td><code>/droplist &lt;boss&gt;</code></td><td>The boss's whole loot table at once — wanted items first (most contested on top, top 3 claims each), unclaimed rest as a roll-or-shard footer.</td></tr>
+    <tr><td><code>/prio [name]</code></td><td>The top of the board, or any raider's line.</td></tr>
+    <tr><td><code>/wish list member:@X</code></td><td>Anyone's ranked list.</td></tr>
+    <tr><td><code>/wishadmin lock [phase] · unlock · status</code></td><td>Phase lock: freezes every wishlist completely; wins keep crossing off automatically. Unlock between phases.</td></tr>
+    <tr><td><code>/wishadmin review · reprice</code></td><td>Awards flagged “didn't respond on time”: list them, then reprice one to what it really was — standings rebuild on the spot.</td></tr>
+    <tr><td><code>/wishadmin digest on|off</code></td><td>Run <code>on</code> in a channel: it gets one post per day after the first build (normally 23:45, minutes after raid) — recorded loot, weekly movers, top 5, warnings.</td></tr>
+    <tr><td><code>/attendance set &lt;name&gt; &lt;date&gt; &lt;status&gt;</code></td><td>Overrule one raider's night (attended / bench / noshow / missed) — replaces any earlier override for that night, rebuilds instantly. <code>/attendance list</code> shows what's on file.</td></tr>
+    <tr><td><code>/roster add</code></td><td>Add a recruit: character, class, role, Discord account, rank (default Trial). Attendance counts from today.</td></tr>
+    <tr><td><code>/mark given &lt;name&gt; · /mark undo</code></td><td>Tick mark hand-outs (20g collected) — walk-ups who never typed /mark request get recorded too, so once-per-lockout always holds.</td></tr>
+  </tbody></table></div>
+
+  <h2>Pages</h2>
+  <div class="tablewrap"><table><tbody>
+    <tr><td><a href="rules.html">rules.html</a></td><td>The loot system, in full — public.</td></tr>
+    <tr><td><a href="loot-history.html">loot-history.html</a></td><td>Every award ever — sortable, filterable — public.</td></tr>
+    <tr><td><a href="wishlist.html">wishlist.html</a></td><td>The browser wishlist editor — open it via your <code>/wish web</code> link.</td></tr>
+    <tr><td><a href="dashboard.html">dashboard.html</a> <span class="lock">🔒</span></td><td>Live standings with per-raider receipts — officer passphrase.</td></tr>
+    <tr><td><a href="officers.html">officers.html</a> <span class="lock">🔒</span></td><td>Wishlists × Priority, T6 token demand, review queue, chase list — officer passphrase.</td></tr>
+    <tr><td><a href="marks.html">marks.html</a> <span class="lock">🔒</span></td><td>Marks of the Illidari tracker — tick hand-outs live; officer passphrase + your name.</td></tr>
+  </tbody></table></div>
+
+  <h2>HTTP API</h2>
+  <p class="sub">Served from the guild PC via <code>https://enr.tail10d5e9.ts.net</code>. Wishlist calls authenticate with the 1-hour token from <code>/wish web</code>; marks calls with the officer passphrase. Cross-origin is allowed for this site only.</p>
+  <div class="tablewrap"><table><tbody>
+    <tr><td><code>GET /api/wishlist?token=…</code></td><td>Your list: name, lock state, items with slot / won / stackable-ring flags.</td></tr>
+    <tr><td><code>POST /api/wishlist</code></td><td><code>{ token, ids: [itemId…] }</code> — replaces your order. Caps: 2 copies for non-unique rings, 1 for everything else; equippables only; 423 while phase-locked.</td></tr>
+    <tr><td><code>GET /api/search?token=…&amp;q=…</code></td><td>Item search over the local database (Rare+, equippables).</td></tr>
+    <tr><td><code>POST /api/import</code></td><td><code>{ token, text }</code> — a WoWSims / Sixty Upgrades export; replaces the whole list.</td></tr>
+    <tr><td><code>GET /api/marks?key=…</code></td><td>Current lockout queue + roster + all-time totals. <code>key</code> = officer passphrase.</td></tr>
+    <tr><td><code>POST /api/marks</code></td><td><code>{ key, by, action: &quot;given&quot;|&quot;undo&quot;, main }</code> — tick or un-tick a hand-out; <code>by</code> is logged as the acting officer. 409 on double-grants.</td></tr>
+  </tbody></table></div>
+
+  <p class="sub" style="margin-top:2rem">Data flow: Warcraft Logs (attendance · parses · consumables) + Raid-Helper (signups · rosters) + RCLootCouncil history (read straight from the game files) rebuild everything nightly at 23:45; wishlist and mark changes publish within ~a minute. Alts always roll below mains, and the council always has the last word.</p>
+</div></body></html>
