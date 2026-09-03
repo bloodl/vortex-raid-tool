@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex — Raid Assignments</title>
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14111c; color: #e9e5f2; font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  .page { max-width: 1000px; margin: 0 auto; padding: 1.6rem 16px 4rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 0.2rem; }
+  h2 { font-size: 1.15rem; margin: 2rem 0 0.4rem; color: #cfc7e2; border-top: 1px solid #2a2438; padding-top: 1.2rem; }
+  h3 { font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: #9d94b3; margin: 1rem 0 0.3rem; }
+  .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; }
+  .tabs button { background: #1b1726; color: #b8aed3; border: 1px solid #2a2438; border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.85rem; cursor: pointer; }
+  .tabs button.on { color: #b678f0; border-color: #b678f0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.8rem; }
+  .card { background: #1b1726; border: 1px solid #2a2438; border-radius: 12px; padding: 0.8rem 0.9rem; }
+  .row { display: flex; gap: 0.6rem; padding: 0.25rem 0; border-bottom: 1px solid #221d2e; font-size: 0.92rem; }
+  .row:last-child { border-bottom: 0; }
+  .row .lb { color: #9d94b3; flex: 0 0 46%; }
+  .row .pl { font-weight: 600; }
+  .row .alt { color: #6f6790; font-size: 0.8rem; font-weight: 400; }
+  .warn { color: #ffb8b8; } .banner { background: #3a2030; border: 1px solid #ff8f8f55; color: #ffb8b8; border-radius: 10px; padding: 0.6rem 0.9rem; margin: 0.6rem 0; font-size: 0.9rem; }
+  .note { color: #b8aed3; font-size: 0.88rem; font-style: italic; margin: 0.5rem 0 0; }
+  .who { font-size: 0.85rem; color: #9d94b3; }
+  .err { background: #3a2030; border: 1px solid #ff8f8f55; color: #ffb8b8; border-radius: 10px; padding: 0.7rem 0.9rem; margin: 0.8rem 0; }
+</style></head><body><style>
+  .topnav { position: sticky; top: 0; z-index: 1000; display: flex; flex-wrap: wrap; gap: 0.1rem; align-items: center; justify-content: center;
+            background: #171420; border-bottom: 1px solid #2a2438; padding: 0.4rem 0.8rem;
+            font: 600 13px/1 "Segoe UI", system-ui, sans-serif; }
+  .topnav .tn-logo { width: 22px; height: 22px; border-radius: 50%; margin-right: 0.45rem; flex: none; }
+  .topnav a { color: #b8aed3; text-decoration: none; padding: 0.45rem 0.6rem; border-radius: 7px; white-space: nowrap; }
+  .topnav a:hover { background: #241f31; color: #e9e5f2; }
+  .topnav a.on { color: #b678f0; background: #241f31; }
+</style><nav class="topnav"><img class="tn-logo" src="https://bloodl.github.io/vortex-loot/icon.png" alt=""><a href="https://bloodl.github.io/vortex-loot/">Home</a><a href="https://bloodl.github.io/vortex-loot/rules.html">Rules</a><a href="https://bloodl.github.io/vortex-loot/loot-history.html">Loot History</a><a href="https://bloodl.github.io/vortex-loot/wishlist.html">Wishlist</a><a href="https://bloodl.github.io/vortex-loot/assign.html" class="on">Assignments</a><a href="https://bloodl.github.io/vortex-loot/api.html">Commands</a><a href="https://bloodl.github.io/vortex-loot/dashboard.html">Standings 🔒</a><a href="https://bloodl.github.io/vortex-loot/officers.html">Officers 🔒</a><a href="https://bloodl.github.io/vortex-loot/marks.html">Marks 🔒</a></nav><div class="page">
+  <h1>⚔️ Raid assignments</h1>
+  <p class="sub" id="who">Loading tonight's comp…</p>
+  <div id="app"></div>
+<script>
+"use strict";
+var API = "https://enr.tail10d5e9.ts.net" || location.origin;
+var state = null, current = null;
+var app = document.getElementById("app"), whoEl = document.getElementById("who");
+function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+
+function render() {
+  var b = state.bosses.find(function (x) { return x.id === current; }) || state.bosses[0];
+  if (!b) { app.innerHTML = '<div class="err">No boss templates.</div>'; return; }
+  current = b.id;
+  var roles = { tank: 0, healer: 0, melee: 0, ranged: 0 };
+  state.players.forEach(function (p) { roles[p.role] = (roles[p.role] || 0) + 1; });
+  whoEl.innerHTML = "<b>" + esc(state.event.title || "Raid") + "</b> — " + esc(state.event.date) + " · " + state.players.length + " rostered (" +
+    roles.tank + " tanks · " + roles.healer + " healers · " + roles.melee + " melee · " + roles.ranged + " ranged) · " + (state.live ? "live comp" : "cached comp");
+  var h = '<div class="tabs">' + state.bosses.map(function (x) { return '<button data-id="' + x.id + '"' + (x.id === b.id ? ' class="on"' : '') + '>' + esc(x.name) + '</button>'; }).join('') + '</div>';
+  h += '<h2>' + esc(b.name) + ' <span class="who">' + esc(b.zone) + '</span></h2>';
+  if (b.warnings.length) h += '<div class="banner">⚠ ' + b.warnings.map(esc).join('<br>') + '</div>';
+  h += '<div class="grid">';
+  b.sections.forEach(function (s) {
+    h += '<div class="card"><h3>' + esc(s.title) + '</h3>';
+    s.rows.forEach(function (r) {
+      var pl = r.player ? esc(r.player) : '<span class="warn">unfilled</span>';
+      var alt = r.alternatives && r.alternatives.length ? ' <span class="alt">or ' + esc(r.alternatives.join(', ')) + '</span>' : '';
+      var res = r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '';
+      var wr = r.warn ? ' <span class="warn">⚠ ' + esc(r.warn) + '</span>' : '';
+      h += '<div class="row"><span class="lb">' + esc(r.label) + (r.arrow ? ' →' : '') + '</span><span class="pl">' + pl + alt + res + wr + '</span></div>';
+    });
+    h += '</div>';
+  });
+  h += '</div>';
+  b.notes.forEach(function (n) { h += '<p class="note">' + esc(n) + '</p>'; });
+  app.innerHTML = h;
+  app.querySelectorAll('.tabs button').forEach(function (btn) { btn.addEventListener('click', function () { current = btn.dataset.id; render(); try { sessionStorage.setItem('assignboss', current); } catch (e) {} }); });
+}
+
+if (!API || API.indexOf('http') !== 0) {
+  app.innerHTML = '<div class="err">Assignments aren\'t switched on yet — ask an officer.</div>';
+} else {
+  try { current = sessionStorage.getItem('assignboss'); } catch (e) {}
+  fetch(API + '/api/assignments').then(function (r) { return r.json(); })
+    .then(function (j) { if (j.error) throw new Error(j.error); state = j; render(); })
+    .catch(function (e) { whoEl.textContent = ''; app.innerHTML = '<div class="err">Couldn\'t load assignments (' + esc(e.message) + ') — the server runs on the guild PC; try again in a bit.</div>'; });
+}
+</script></div></body></html>
