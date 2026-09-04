@@ -47,30 +47,40 @@
   .tabs button.zb { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; padding: 0.4rem 1rem;
                     position: relative; overflow: hidden; isolation: isolate; }
   .tabs button.zb > span { position: relative; z-index: 2; }
-  /* Selected Black Temple: warglaive fel-fire licking up the inside of the button.
-     The layers cover the button exactly (it clips them), with the gradient
-     centres just under the bottom edge so only the tongues reach in. Two layers
-     at different speeds keep the flicker from pulsing in lockstep. */
-  .tabs button.zb.z-bt.on { color: #eaffef; background: #0a1a10; border-color: #7dffb4; }
-  .tabs button.zb.z-bt.on::before, .tabs button.zb.z-bt.on::after {
+  /* The selected zone burns: fel green for Black Temple, arcane blue for Hyjal.
+     Two blurred gradient layers, anchored to the button's bottom edge so the
+     tongues reach up inside it, drift at different speeds and blend as light —
+     the flame flickers instead of pulsing. Colours come from per-zone tokens. */
+  .tabs button.zb.z-bt.on {
+    color: #eaffef; background: #0a1a10; border-color: #7dffb4;
+    --f-core: #ffffffff; --f-hot: #7dffb4cc; --f-mid: #45ff9fcc; --f-edge: #2fd77a00; --f-tip: #d6ffe9ff;
+    --f-glow-a: #2fd77a99; --f-glow-b: #7dffb4dd; --f-in-a: #2fd77a66; --f-in-b: #35e88a99;
+  }
+  .tabs button.zb.z-hyjal.on {
+    color: #eaf6ff; background: #08131f; border-color: #8ecbff;
+    --f-core: #ffffffff; --f-hot: #a8dbffcc; --f-mid: #5ab6ffcc; --f-edge: #4aa8ff00; --f-tip: #d9edffff;
+    --f-glow-a: #4aa8ff99; --f-glow-b: #a8dbffdd; --f-in-a: #4aa8ff66; --f-in-b: #6cc4ff99;
+  }
+  .tabs button.zb.z-bt.on::before, .tabs button.zb.z-bt.on::after,
+  .tabs button.zb.z-hyjal.on::before, .tabs button.zb.z-hyjal.on::after {
     content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; mix-blend-mode: screen; filter: blur(1.6px);
   }
-  .tabs button.zb.z-bt.on::before {
+  .tabs button.zb.z-bt.on::before, .tabs button.zb.z-hyjal.on::before {
     background:
-      radial-gradient(ellipse 5px 17px at 11% 100%, #f2fff8ff, #45ff9fcc 34%, #2fd77a00 62%),
-      radial-gradient(ellipse 6px 22px at 30% 100%, #ffffffff, #7dffb4cc 32%, #2fd77a00 60%),
-      radial-gradient(ellipse 5px 15px at 50% 100%, #eafff4ff, #45ff9fbb 34%, #2fd77a00 62%),
-      radial-gradient(ellipse 6px 20px at 70% 100%, #ffffffff, #7dffb4c4 33%, #2fd77a00 61%),
-      radial-gradient(ellipse 5px 16px at 89% 100%, #eafff4ff, #45ff9fbb 34%, #2fd77a00 62%);
+      radial-gradient(ellipse 5px 17px at 11% 100%, var(--f-core), var(--f-mid) 34%, var(--f-edge) 62%),
+      radial-gradient(ellipse 6px 22px at 30% 100%, var(--f-core), var(--f-hot) 32%, var(--f-edge) 60%),
+      radial-gradient(ellipse 5px 15px at 50% 100%, var(--f-core), var(--f-mid) 34%, var(--f-edge) 62%),
+      radial-gradient(ellipse 6px 20px at 70% 100%, var(--f-core), var(--f-hot) 33%, var(--f-edge) 61%),
+      radial-gradient(ellipse 5px 16px at 89% 100%, var(--f-core), var(--f-mid) 34%, var(--f-edge) 62%);
     animation: felflame 1.25s ease-in-out infinite alternate;
   }
-  .tabs button.zb.z-bt.on::after {
+  .tabs button.zb.z-bt.on::after, .tabs button.zb.z-hyjal.on::after {
     filter: blur(2.4px);
     background:
-      radial-gradient(ellipse 4px 24px at 20% 100%, #d6ffe9ff, #2fd77a00 58%),
-      radial-gradient(ellipse 4px 28px at 40% 100%, #ffffffff, #35e88a00 56%),
-      radial-gradient(ellipse 4px 22px at 60% 100%, #d6ffe9ff, #2fd77a00 58%),
-      radial-gradient(ellipse 4px 20px at 80% 100%, #b6ffd8ff, #2fd77a00 60%);
+      radial-gradient(ellipse 4px 24px at 20% 100%, var(--f-tip), var(--f-edge) 58%),
+      radial-gradient(ellipse 4px 28px at 40% 100%, var(--f-core), var(--f-edge) 56%),
+      radial-gradient(ellipse 4px 22px at 60% 100%, var(--f-tip), var(--f-edge) 58%),
+      radial-gradient(ellipse 4px 20px at 80% 100%, var(--f-tip), var(--f-edge) 60%);
     animation: felflame2 0.85s ease-in-out infinite alternate;
   }
   @keyframes felflame {
@@ -81,13 +91,14 @@
     from { transform: translateY(2px) scale(0.92, 0.88) skewX(-5deg); opacity: 0.5; }
     to   { transform: translateY(-5px) scale(1.06, 1.3) skewX(6deg); opacity: 1; }
   }
-  .tabs button.z-bt.on { animation: felglow 1.9s ease-in-out infinite alternate; }
+  .tabs button.zb.z-bt.on, .tabs button.zb.z-hyjal.on { animation: felglow 1.9s ease-in-out infinite alternate; }
   @keyframes felglow {
-    from { box-shadow: 0 0 12px #2fd77a99, inset 0 -4px 10px #2fd77a66; }
-    to   { box-shadow: 0 0 26px #7dffb4dd, inset 0 -8px 16px #35e88a99; }
+    from { box-shadow: 0 0 12px var(--f-glow-a), inset 0 -4px 10px var(--f-in-a); }
+    to   { box-shadow: 0 0 26px var(--f-glow-b), inset 0 -8px 16px var(--f-in-b); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .tabs button.zb.z-bt.on::before, .tabs button.zb.z-bt.on::after, .tabs button.z-bt.on { animation: none; }
+    .tabs button.zb.z-bt.on::before, .tabs button.zb.z-bt.on::after, .tabs button.zb.z-bt.on,
+    .tabs button.zb.z-hyjal.on::before, .tabs button.zb.z-hyjal.on::after, .tabs button.zb.z-hyjal.on { animation: none; }
   }
   /* Packed columns, not a grid: short cards (Tanks, Bloodlust) stack under each
      other instead of being stretched to the tallest card in their row. */
