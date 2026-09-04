@@ -42,7 +42,9 @@
   .tabs button.z-hyjal.on { color: #a6d4ff; background: #16202b; box-shadow: 0 0 14px #4aa8ffaa, inset 0 0 8px #4aa8ff44; }
   .tabs button.z-night { border-color: #b678f0; box-shadow: 0 0 6px #b678f055, inset 0 0 6px #b678f022; }
   .tabs button.z-night.on { color: #dcc4ff; background: #221a30; box-shadow: 0 0 14px #b678f0aa, inset 0 0 8px #b678f044; }
-  .tabs .zl { align-self: center; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: #6f6790; margin: 0 0.3rem 0 0.5rem; }
+  .tabs .zrow, .tabs .brow { display: flex; flex-wrap: wrap; gap: 0.3rem; flex: 0 0 100%; }
+  .tabs .brow { margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #2a2438; }
+  .tabs button.zb { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; padding: 0.4rem 1rem; }
   /* Packed columns, not a grid: short cards (Tanks, Bloodlust) stack under each
      other instead of being stretched to the tallest card in their row. */
   .grid { columns: 3 300px; column-gap: 0.8rem; }
@@ -138,13 +140,20 @@ function render() {
   });
   // Tabs grouped by zone with a small label, each button glowing in its zone colour.
   var zoneClass = function (z) { return /black temple/i.test(z) ? 'z-bt' : /hyjal/i.test(z) ? 'z-hyjal' : /raid-wide|all night/i.test(z) ? 'z-night' : ''; };
+  // Two rows: the zones (All night · Black Temple · Mount Hyjal) on top, and only the
+  // chosen zone's bosses underneath — switching zone swaps the whole boss row.
   var zones = [];
   state.bosses.forEach(function (x) { if (zones.indexOf(x.zone) < 0) zones.push(x.zone); });
-  var h = '<div class="tabs">' + pastBar() + zones.map(function (z) {
-    return '<span class="zl">' + esc(z) + '</span>' + state.bosses.filter(function (x) { return x.zone === z; }).map(function (x) {
+  var zoneLabel = function (z) { return /hyjal/i.test(z) ? 'Mount Hyjal' : z; };
+  var inZone = state.bosses.filter(function (x) { return x.zone === b.zone; });
+  var h = '<div class="tabs">' + pastBar() +
+    '<div class="zrow">' + zones.map(function (z) {
+      return '<button data-zone="' + esc(z) + '" class="zb ' + zoneClass(z) + (z === b.zone ? ' on' : '') + '">' + esc(zoneLabel(z)) + '</button>';
+    }).join('') + '</div>' +
+    (inZone.length > 1 ? '<div class="brow">' + inZone.map(function (x) {
       return '<button data-id="' + x.id + '" class="' + zoneClass(x.zone) + (x.id === b.id ? ' on' : '') + '">' + esc(x.name) + '</button>';
-    }).join('');
-  }).join('') + '</div>';
+    }).join('') + '</div>' : '') +
+    '</div>';
   h += '<h2>' + esc(b.name) + ' <span class="who">' + esc(b.zone) + '</span></h2>';
   // Room diagrams: the template can list several (Illidan's phases); default one per boss id.
   // diagrams === false: no picture yet (the sheet's was wrong; a hand-drawn one is coming).
@@ -211,7 +220,14 @@ function render() {
     img.onerror = function () { document.getElementById('diag' + i).hidden = true; };
     img.src = 'images/assign/' + d.file;
   });
-  app.querySelectorAll('.tabs button').forEach(function (btn) { btn.addEventListener('click', function () { current = btn.dataset.id; render(); try { sessionStorage.setItem('assignboss', current); } catch (e) {} }); });
+  app.querySelectorAll('.tabs button[data-id]').forEach(function (btn) { btn.addEventListener('click', function () { current = btn.dataset.id; render(); try { sessionStorage.setItem('assignboss', current); sessionStorage.setItem('assignboss:' + b.zone, current); } catch (e) {} }); });
+  app.querySelectorAll('.tabs button[data-zone]').forEach(function (btn) { btn.addEventListener('click', function () {
+    var z = btn.dataset.zone, remembered = null;
+    try { remembered = sessionStorage.getItem('assignboss:' + z); } catch (e) {}
+    var pick = state.bosses.filter(function (x) { return x.zone === z && x.id === remembered; })[0] || state.bosses.filter(function (x) { return x.zone === z; })[0];
+    if (!pick) return;
+    current = pick.id; render(); try { sessionStorage.setItem('assignboss', current); } catch (e) {}
+  }); });
   app.querySelectorAll('button[data-extra]').forEach(function (btn) { btn.addEventListener('click', function () {
     extra[btn.dataset.extra] = btn.dataset.on === '1'; btn.disabled = true; btn.textContent = '…'; load();
   }); });
