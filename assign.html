@@ -11,6 +11,9 @@
   h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: #b8aed3; margin: 0 0 0.45rem; display: flex; align-items: center; gap: 0.45rem; }
   h3 img, h2 img { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #3a3350; }
   .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
+  .card h3 .mini { margin-left: auto; font: 600 11px/1 "Segoe UI", system-ui, sans-serif; padding: 0.3rem 0.55rem; border-radius: 6px;
+                   border: 1px solid #3a3350; background: #241f31; color: #cfc7e2; cursor: pointer; }
+  .card h3 .mini:hover { background: #2e2740; color: #fff; }
   /* Boss tabs stay pinned under the top menubar so the next boss is one click away from anywhere. */
   .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; position: sticky; top: 0; z-index: 900;
           background: #14111c; padding: 0.5rem 0; border-bottom: 1px solid #2a2438; }
@@ -117,7 +120,12 @@ function render() {
   if (b.warnings.length) h += '<div class="banner">⚠ ' + b.warnings.map(esc).join('<br>') + '</div>';
   h += '<div class="grid">';
   b.sections.forEach(function (s) {
-    h += '<div class="card"><h3>' + iconFor(s.title) + esc(s.title) + '</h3>';
+    // Optional slots (Teron's 6th healer) stay hidden until an officer asks for
+    // them — then the engine fills with a flex pick if no real healer is spare.
+    var opt = s.optional || {};
+    var optBtn = opt.hidden ? '<button class="mini" data-extra="' + b.id + '" data-on="1">＋ add a healer (flex pick)</button>'
+      : (opt.shown && extra[b.id]) ? '<button class="mini" data-extra="' + b.id + '" data-on="0">− back to the normal healer count</button>' : '';
+    h += '<div class="card"><h3>' + iconFor(s.title) + esc(s.title) + optBtn + '</h3>';
     s.rows.forEach(function (r) {
       var pl = r.list ? names(r.list) : (r.player ? name(r.player) : '<span class="warn">unfilled</span>');
       var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
@@ -150,14 +158,23 @@ function render() {
     img.src = 'images/assign/' + d.file;
   });
   app.querySelectorAll('.tabs button').forEach(function (btn) { btn.addEventListener('click', function () { current = btn.dataset.id; render(); try { sessionStorage.setItem('assignboss', current); } catch (e) {} }); });
+  app.querySelectorAll('button[data-extra]').forEach(function (btn) { btn.addEventListener('click', function () {
+    extra[btn.dataset.extra] = btn.dataset.on === '1'; btn.disabled = true; btn.textContent = '…'; load();
+  }); });
+}
+
+var extra = {}; // bossId -> true while the officer wants the optional slots filled
+function load() {
+  var ex = Object.keys(extra).filter(function (k) { return extra[k]; });
+  return fetch(API + '/api/assignments' + (ex.length ? '?extra=' + encodeURIComponent(ex.join(',')) : '')).then(function (r) { return r.json(); })
+    .then(function (j) { if (j.error) throw new Error(j.error); state = j; render(); })
+    .catch(function (e) { whoEl.textContent = ''; app.innerHTML = '<div class="err">Couldn\'t load assignments (' + esc(e.message) + ') — the server runs on the guild PC; try again in a bit.</div>'; });
 }
 
 if (!API || API.indexOf('http') !== 0) {
   app.innerHTML = '<div class="err">Assignments aren\'t switched on yet — ask an officer.</div>';
 } else {
   try { current = sessionStorage.getItem('assignboss'); } catch (e) {}
-  fetch(API + '/api/assignments').then(function (r) { return r.json(); })
-    .then(function (j) { if (j.error) throw new Error(j.error); state = j; render(); })
-    .catch(function (e) { whoEl.textContent = ''; app.innerHTML = '<div class="err">Couldn\'t load assignments (' + esc(e.message) + ') — the server runs on the guild PC; try again in a bit.</div>'; });
+  load();
 }
 </script></div></body></html>
