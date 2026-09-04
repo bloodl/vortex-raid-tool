@@ -17,7 +17,12 @@
   /* Officer mode: the name stays class-coloured on the same row; the ▾ is a transparent native select. */
   .dd { position: relative; display: inline-block; margin-left: 0.4rem; padding: 0 0.3rem; border-radius: 5px; color: #9d94b3; font-size: 0.8rem; line-height: 1.3; cursor: pointer; border: 1px solid #2e2740; background: #201c2b; vertical-align: baseline; }
   .dd:hover { color: #e9e5f2; border-color: #4a4160; }
-  .dd select { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); opacity: 0; cursor: pointer; margin: 0; }
+  .menu { position: absolute; z-index: 1200; background: #1b1726; border: 1px solid #3a3350; border-radius: 10px; padding: 0.3rem; min-width: 200px; max-height: 60vh; overflow: auto; box-shadow: 0 10px 28px #000a; font-size: 0.9rem; }
+  .menu div { padding: 0.32rem 0.65rem; border-radius: 6px; cursor: pointer; white-space: nowrap; font-weight: 600; }
+  .menu div:hover { background: #2a2438; }
+  .menu div.cur { background: #241f31; }
+  .menu .mh, .menu .mh:hover { color: #6f6790; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.2rem 0.65rem 0.4rem; cursor: default; background: transparent; font-weight: 600; }
+  .menu .flexm { color: #6f6790; font-size: 0.75rem; font-weight: 400; margin-left: 0.35rem; }
   /* Boss tabs stay pinned under the top menubar so the next boss is one click away from anywhere. */
   .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; position: sticky; top: 0; z-index: 900;
           background: #14111c; padding: 0.5rem 0; border-bottom: 1px solid #2a2438; }
@@ -149,12 +154,10 @@ function render() {
         var cur = r.player || '';
         var have = r.options.some(function (o) { return o.main === cur; });
         pl = (r.player ? name(r.player) : '<span class="warn">unfilled</span>') +
-          '<span class="dd" title="change who does this">▾<select class="pick" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">— automatic —</option>' +
-          (cur && !have ? '<option selected>' + esc(cur) + '</option>' : '') +
-          r.options.map(function (o) { return '<option value="' + esc(o.main) + '"' + (o.main === cur ? ' selected' : '') + '>' + esc(o.main) + (o.flex ? ' (flex)' : '') + '</option>'; }).join('') + '</select></span>';
+          '<span class="dd" title="change who does this" data-kind="pick" data-sec="' + esc(s.title) + '" data-idx="' + i + '">▾</span>';
       }
       if (OKEY && r.list && r.options && r.options.length) {
-        pl += '<span class="dd" title="move someone into this stack">＋▾<select class="move" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">move here…</option>' + r.options.map(function (o) { return '<option value="' + esc(o.main) + '">' + esc(o.main) + '</option>'; }).join('') + '</select></span>';
+        pl += '<span class="dd" title="move someone into this stack" data-kind="move" data-sec="' + esc(s.title) + '" data-idx="' + i + '">＋▾</span>';
       }
       var ov = r.override ? ' <span class="alt" title="changed by an officer tonight">✎ ' + esc(r.override.by || 'officer') + (r.override.via === 'swap' ? ' (swap)' : '') + '</span>' : '';
       var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
@@ -173,8 +176,7 @@ function render() {
   }
   app.innerHTML = h;
   pinTabs();
-  app.querySelectorAll('select.pick').forEach(function (sel) { sel.addEventListener('change', function () { pin({ section: sel.dataset.sec, idx: Number(sel.dataset.idx), player: sel.value || null, clear: !sel.value }); }); });
-  app.querySelectorAll('select.move').forEach(function (sel) { sel.addEventListener('change', function () { if (sel.value) pin({ section: sel.dataset.sec, idx: Number(sel.dataset.idx), player: sel.value, listMove: true }); }); });
+  app.querySelectorAll('.dd').forEach(function (chip) { chip.addEventListener('click', function (e) { e.stopPropagation(); openMenu(chip, b); }); });
   var rp = document.getElementById('resetpins');
   if (rp) rp.addEventListener('click', function () { if (confirm('Drop every officer change on this boss and go back to the automatic assignment?')) pin({ resetBoss: true }); });
   var cg = document.getElementById('copygroups');
@@ -210,6 +212,41 @@ function pin(body) {
     .then(function (r) { if (r.status === 403) { OKEY = null; try { sessionStorage.removeItem('markskey'); } catch (x) {} alert('Officer passphrase rejected.'); return load().then(function () { return null; }); } return r.json(); })
     .then(function (j) { if (!j) return; if (j.error) { alert(j.error); return load(); } state = j; lastV = j.v; render(); })
     .catch(function (e) { alert('Could not save: ' + e.message); });
+}
+// Officer picker: a small menu under the ▾ chip with class-coloured names (native selects can't be coloured).
+var menuEl = null;
+function closeMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+document.addEventListener('click', closeMenu);
+document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+window.addEventListener('scroll', closeMenu, true);
+function openMenu(chip, b) {
+  closeMenu();
+  var sec = b.sections.filter(function (x) { return x.title === chip.dataset.sec; })[0];
+  var idx = Number(chip.dataset.idx), row = sec && sec.rows[idx];
+  if (!row) return;
+  var kind = chip.dataset.kind, cur = row.player || '';
+  var items = kind === 'pick' ? [{ main: '', label: '— automatic —' }].concat(row.options) : row.options;
+  var m = document.createElement('div');
+  m.className = 'menu';
+  m.innerHTML = (kind === 'move' ? '<div class="mh">move into this stack</div>' : '') + items.map(function (o) {
+    var isCur = kind === 'pick' && o.main === cur;
+    var lab = o.main ? name(o.main) + (o.flex ? '<span class="flexm" title="' + esc(o.flex) + '">flex</span>' : '') : '<span class="muted" style="font-weight:400">' + esc(o.label) + '</span>';
+    return '<div data-v="' + esc(o.main) + '"' + (isCur ? ' class="cur"' : '') + '>' + lab + (isCur ? ' <span class="muted">✓</span>' : '') + '</div>';
+  }).join('');
+  document.body.appendChild(m);
+  var r = chip.getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - m.offsetWidth - 8)) + 'px';
+  m.style.top = (window.scrollY + r.bottom + 4) + 'px';
+  m.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var it = e.target.closest('[data-v]');
+    if (!it) return;
+    var v = it.dataset.v;
+    closeMenu();
+    if (kind === 'pick') pin({ section: sec.title, idx: idx, player: v || null, clear: !v });
+    else if (v) pin({ section: sec.title, idx: idx, player: v, listMove: true });
+  });
+  menuEl = m;
 }
 // Live: the server streams a version number; when it changes, refetch. Polling if the stream can't be opened.
 var lastV = null, pollTimer = null;
