@@ -24,7 +24,10 @@
   .tabs button.z-bt.on { color: #7dffb4; background: #16231c; box-shadow: 0 0 14px #2fd77aaa, inset 0 0 8px #2fd77a44; }
   .tabs button.z-hyjal.on { color: #a6d4ff; background: #16202b; box-shadow: 0 0 14px #4aa8ffaa, inset 0 0 8px #4aa8ff44; }
   .tabs .zl { align-self: center; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: #6f6790; margin: 0 0.3rem 0 0.5rem; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.8rem; }
+  /* Packed columns, not a grid: short cards (Tanks, Bloodlust) stack under each
+     other instead of being stretched to the tallest card in their row. */
+  .grid { columns: 3 300px; column-gap: 0.8rem; }
+  .grid .card { break-inside: avoid; margin: 0 0 0.8rem; }
   .card { background: #1b1726; border: 1px solid #2a2438; border-radius: 12px; padding: 0.8rem 0.9rem; }
   .row { display: flex; gap: 0.6rem; padding: 0.28rem 0; border-bottom: 1px solid #221d2e; font-size: 0.92rem; align-items: baseline; }
   .row:last-child { border-bottom: 0; }
