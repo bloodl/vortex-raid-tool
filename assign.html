@@ -12,8 +12,13 @@
   h3 img, h2 img { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #3a3350; }
   .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
   .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; }
-  .tabs button { background: #1b1726; color: #b8aed3; border: 1px solid #2a2438; border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.85rem; cursor: pointer; }
-  .tabs button.on { color: #b678f0; border-color: #b678f0; }
+  .tabs button { background: #1b1726; color: #b8aed3; border: 1px solid #2a2438; border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.85rem; cursor: pointer; transition: box-shadow 0.15s; }
+  /* Zone colour-coding: Black Temple glows fel green (warglaive style), Hyjal glows blue. */
+  .tabs button.z-bt { border-color: #2fd77a; box-shadow: 0 0 6px #2fd77a55, inset 0 0 6px #2fd77a22; }
+  .tabs button.z-hyjal { border-color: #4aa8ff; box-shadow: 0 0 6px #4aa8ff55, inset 0 0 6px #4aa8ff22; }
+  .tabs button.z-bt.on { color: #7dffb4; background: #16231c; box-shadow: 0 0 14px #2fd77aaa, inset 0 0 8px #2fd77a44; }
+  .tabs button.z-hyjal.on { color: #a6d4ff; background: #16202b; box-shadow: 0 0 14px #4aa8ffaa, inset 0 0 8px #4aa8ff44; }
+  .tabs .zl { align-self: center; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: #6f6790; margin: 0 0.3rem 0 0.5rem; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.8rem; }
   .card { background: #1b1726; border: 1px solid #2a2438; border-radius: 12px; padding: 0.8rem 0.9rem; }
   .row { display: flex; gap: 0.6rem; padding: 0.28rem 0; border-bottom: 1px solid #221d2e; font-size: 0.92rem; align-items: baseline; }
@@ -80,10 +85,19 @@ function render() {
   state.players.forEach(function (p) { roles[p.role] = (roles[p.role] || 0) + 1; classOf[p.main] = p.cls; });
   whoEl.innerHTML = "<b>" + esc(state.event.title || "Raid") + "</b> — " + esc(state.event.date) + " · " + state.players.length + " rostered (" +
     roles.tank + " tanks · " + roles.healer + " healers · " + roles.melee + " melee · " + roles.ranged + " ranged) · " + (state.live ? "live comp" : "cached comp");
-  var h = '<div class="tabs">' + state.bosses.map(function (x) { return '<button data-id="' + x.id + '"' + (x.id === b.id ? ' class="on"' : '') + '>' + esc(x.name) + '</button>'; }).join('') + '</div>';
+  // Tabs grouped by zone with a small label, each button glowing in its zone colour.
+  var zoneClass = function (z) { return /black temple/i.test(z) ? 'z-bt' : /hyjal/i.test(z) ? 'z-hyjal' : ''; };
+  var zones = [];
+  state.bosses.forEach(function (x) { if (zones.indexOf(x.zone) < 0) zones.push(x.zone); });
+  var h = '<div class="tabs">' + zones.map(function (z) {
+    return '<span class="zl">' + esc(z) + '</span>' + state.bosses.filter(function (x) { return x.zone === z; }).map(function (x) {
+      return '<button data-id="' + x.id + '" class="' + zoneClass(x.zone) + (x.id === b.id ? ' on' : '') + '">' + esc(x.name) + '</button>';
+    }).join('');
+  }).join('') + '</div>';
   h += '<h2>' + esc(b.name) + ' <span class="who">' + esc(b.zone) + '</span></h2>';
   // Room diagrams: the template can list several (Illidan's phases); default one per boss id.
-  var diags = (b.diagrams && b.diagrams.length) ? b.diagrams : [{ file: b.id + '.jpg', caption: 'Room positions — ' + b.name }];
+  // diagrams === false: no picture yet (the sheet's was wrong; a hand-drawn one is coming).
+  var diags = b.diagrams === false ? [] : (b.diagrams && b.diagrams.length) ? b.diagrams : [{ file: b.id + '.jpg', caption: 'Room positions — ' + b.name }];
   diags.forEach(function (d, i) {
     h += '<figure class="diagram" id="diag' + i + '" hidden><img id="diagimg' + i + '" alt="' + esc(d.caption) + '"><figcaption>' + esc(d.caption) + '</figcaption></figure>';
   });
@@ -93,8 +107,8 @@ function render() {
     h += '<div class="card"><h3>' + iconFor(s.title) + esc(s.title) + '</h3>';
     s.rows.forEach(function (r) {
       var pl = r.list ? names(r.list) : (r.player ? name(r.player) : '<span class="warn">unfilled</span>');
-      var alt = r.alternatives && r.alternatives.length ? ' <span class="alt">or ' + names(r.alternatives) + '</span>' : '';
-      var res = r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '';
+      var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
+      var res = (r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '') + (r.flex ? ' <span class="alt">flex: ' + esc(r.flex) + '</span>' : '') + (r.backup ? ' <span class="alt">· backup ' + name(r.backup) + '</span>' : '');
       var wr = r.warn ? ' <span class="warn">⚠ ' + esc(r.warn) + '</span>' : '';
       var lb = r.arrow ? name(r.label) + ' →' : labelHtml(r.label);
       h += '<div class="row"><span class="lb">' + lb + '</span><span class="pl">' + pl + alt + res + wr + '</span></div>';
