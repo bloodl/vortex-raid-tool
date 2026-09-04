@@ -66,7 +66,7 @@ var ICONS = [
   [/curse of tongues|curses/i, "spell_shadow_curseoftounges"], [/curse of weakness/i, "spell_shadow_curseofmannoroth"], [/frost trap/i, "spell_frost_chainsofice"],
   [/kick|interrupt/i, "ability_kick"], [/shadowfiend/i, "spell_shadow_shadowfiend"], [/taunt/i, "spell_nature_reincarnation"], [/dispel/i, "spell_holy_dispelmagic"],
   [/healing reduction/i, "ability_rogue_disembowel"], [/soak/i, "spell_shadow_lifedrain02"], [/seethe/i, "ability_warrior_challange"], [/zone|position/i, "inv_misc_map02"],
-  [/tank/i, "ability_defend"], [/heal/i, "spell_holy_flashheal"],
+  [/tank/i, "ability_defend"], [/heal/i, "spell_holy_flashheal"], [/swap|groups/i, "inv_misc_groupneedmore"],
 ];
 function iconFor(title) { for (var i = 0; i < ICONS.length; i++) if (ICONS[i][0].test(title)) return '<img src="https://wow.zamimg.com/images/wow/icons/medium/' + ICONS[i][1] + '.jpg" alt="" loading="lazy">'; return ""; }
 function name(n) { var c = CLASS_COLOR[classOf[n]]; return c ? '<span style="color:' + c + '">' + esc(n) + '</span>' : esc(n); }
@@ -117,7 +117,17 @@ function render() {
   });
   h += '</div>';
   b.notes.forEach(function (n) { h += '<p class="note">' + esc(n) + '</p>'; });
+  if (b.groupsExport) {
+    h += '<div class="card" style="margin-top:0.8rem"><h3>' + iconFor('groups') + 'Groups for this boss — comp-export layout <button id="copygroups" style="margin-left:auto">📋 Copy for MRT</button></h3>' +
+      '<pre id="groupstext" style="margin:0;white-space:pre-wrap;font:13px/1.5 Consolas,ui-monospace,monospace;color:#cfc7e2">' + esc(b.groupsExport) + '</pre></div>';
+  }
   app.innerHTML = h;
+  var cg = document.getElementById('copygroups');
+  if (cg) cg.addEventListener('click', function () {
+    var t = document.getElementById('groupstext').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { cg.textContent = '✓ Copied'; setTimeout(function () { cg.textContent = '📋 Copy for MRT'; }, 1500); })
+      .catch(function () { var r = document.createRange(); r.selectNodeContents(document.getElementById('groupstext')); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); cg.textContent = 'Select-all done — Ctrl+C'; });
+  });
   // Optional room diagrams: shown only when the image exists on the site.
   diags.forEach(function (d, i) {
     var img = document.getElementById('diagimg' + i);
