@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vortex — Settings</title>
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14111c; color: #e9e5f2; font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 1.2rem 14px 4rem; }
+  h1 { font-size: 1.3rem; margin: 0 0 0.2rem; }
+  h2 { font-size: 1.1rem; margin: 0 0 0.2rem; }
+  .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
+  .card { background: #1b1726; border: 1px solid #2a2438; border-radius: 12px; padding: 0.9rem 1rem; margin: 0.8rem 0; }
+  .gate { max-width: 460px; }
+  button { background: #2a2438; color: #e9e5f2; border: 1px solid #3a3350; border-radius: 8px; padding: 0.45rem 0.8rem; font-size: 0.9rem; cursor: pointer; }
+  button:hover { background: #332c44; } button:disabled { opacity: 0.5; cursor: default; }
+  button.go { border-color: #7fd98c66; color: #a9e8b2; }
+  button.warn { border-color: #ffb86b66; color: #ffd39a; }
+  button.small { font-size: 0.78rem; padding: 0.25rem 0.55rem; }
+  input, select, textarea { background: #201c2b; border: 1px solid #332c44; color: #e9e5f2; border-radius: 8px; padding: 0.45rem 0.6rem; font-size: 0.92rem; width: 100%; font-family: inherit; }
+  textarea { min-height: 4.5rem; resize: vertical; }
+  textarea.code { font: 12.5px/1.45 Consolas, ui-monospace, monospace; min-height: 18rem; white-space: pre; }
+  input[type=checkbox] { width: auto; transform: scale(1.2); margin: 0.5rem 0; }
+  .dirty { border-color: #b678f0; box-shadow: 0 0 0 1px #b678f055; }
+  .layout { display: grid; grid-template-columns: 190px 1fr; gap: 1rem; align-items: start; }
+  .side { position: sticky; top: 56px; display: flex; flex-direction: column; gap: 0.2rem; }
+  .side button { text-align: left; background: transparent; border-color: transparent; color: #b8aed3; }
+  .side button.on { background: #241f31; color: #b678f0; border-color: #2a2438; }
+  .field { display: grid; grid-template-columns: 270px 1fr; gap: 0.3rem 0.8rem; padding: 0.55rem 0; border-bottom: 1px solid #221d2e; align-items: start; }
+  .field:last-child { border-bottom: 0; }
+  .field .lb { font-weight: 600; font-size: 0.9rem; padding-top: 0.35rem; }
+  .field .help { color: #9d94b3; font-size: 0.78rem; font-weight: 400; display: block; }
+  .field .rs { color: #ffd39a; font-size: 0.72rem; }
+  .bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.6rem 0; }
+  .bar .sp { flex: 1 1 auto; }
+  .banner { background: #2c2415; border: 1px solid #ffb86b55; color: #ffd39a; border-radius: 10px; padding: 0.6rem 0.9rem; margin: 0.6rem 0; font-size: 0.9rem; }
+  .err { background: #3a2030; border: 1px solid #ff8f8f55; color: #ffb8b8; border-radius: 10px; padding: 0.7rem 0.9rem; margin: 0.8rem 0; }
+  .status { position: fixed; bottom: 0.8rem; right: 1rem; background: #1b1726; border: 1px solid #3a3350; border-radius: 999px; padding: 0.3rem 0.9rem; font-size: 0.85rem; opacity: 0; transition: opacity 0.25s; z-index: 5; max-width: 80vw; }
+  .status.show { opacity: 1; }
+  .tblwrap { overflow-x: auto; }
+  table.tbl { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  table.tbl th { text-align: left; color: #9d94b3; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.3rem 0.35rem; }
+  table.tbl td { padding: 0.15rem 0.35rem; border-top: 1px solid #221d2e; white-space: nowrap; }
+  table.tbl input, table.tbl select { padding: 0.3rem 0.45rem; font-size: 0.86rem; min-width: 5.5rem; }
+  table.tbl input.num { width: 4.6rem; min-width: 4.6rem; }
+  table.tbl input.wide { min-width: 9rem; }
+  .recent { font-size: 0.8rem; color: #9d94b3; } .recent div { padding: 0.15rem 0; border-top: 1px solid #221d2e; }
+  .names { font-size: 0.78rem; color: #9d94b3; margin: 0 0 0.6rem; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } .side { position: static; flex-direction: row; flex-wrap: wrap; } .field { grid-template-columns: 1fr; } }
+</style></head><body><style>
+  .topnav { position: sticky; top: 0; z-index: 1000; display: flex; flex-wrap: wrap; gap: 0.1rem; align-items: center; justify-content: center;
+            background: #171420; border-bottom: 1px solid #2a2438; padding: 0.4rem 0.8rem;
+            font: 600 13px/1 "Segoe UI", system-ui, sans-serif; }
+  .topnav .tn-logo { width: 22px; height: 22px; border-radius: 50%; margin-right: 0.45rem; flex: none; }
+  .topnav a { color: #b8aed3; text-decoration: none; padding: 0.45rem 0.6rem; border-radius: 7px; white-space: nowrap; }
+  .topnav a:hover { background: #241f31; color: #e9e5f2; }
+  .topnav a.on { color: #b678f0; background: #241f31; }
+</style><nav class="topnav"><img class="tn-logo" src="https://bloodl.github.io/vortex-raid-tool/icon.png" alt=""><a href="https://bloodl.github.io/vortex-raid-tool/">Home</a><a href="https://bloodl.github.io/vortex-raid-tool/rules.html">Rules</a><a href="https://bloodl.github.io/vortex-raid-tool/loot-history.html">Loot History</a><a href="https://bloodl.github.io/vortex-raid-tool/wishlist.html">Wishlist</a><a href="https://bloodl.github.io/vortex-raid-tool/api.html">Commands</a><a href="https://bloodl.github.io/vortex-raid-tool/dashboard.html">Standings 🔒</a><a href="https://bloodl.github.io/vortex-raid-tool/officers.html">Officers 🔒</a><a href="https://bloodl.github.io/vortex-raid-tool/marks.html">Marks 🔒</a><a href="https://bloodl.github.io/vortex-raid-tool/settings.html" class="on">Settings 🔒</a></nav><div class="wrap">
+  <h1>⚙️ Settings</h1>
+  <p class="sub" id="who">Guildmaster page — every knob in one place. Changes are written to the guild PC immediately; scoring changes show after a rebuild.</p>
+  <div id="app"></div>
+  <div class="status" id="status"></div>
+<script>
+"use strict";
+var API = "https://enr.tail10d5e9.ts.net" || location.origin;
+var NL = String.fromCharCode(10), CR = String.fromCharCode(13);
+var KEY = null, BY = null, state = null, current = null, restartPending = [];
+try { KEY = sessionStorage.getItem("gmkey"); BY = sessionStorage.getItem("gmby"); current = sessionStorage.getItem("gmsection"); } catch (e) {}
+
+var app = document.getElementById("app");
+var statusEl = document.getElementById("status");
+
+function flash(text, sticky) {
+  statusEl.textContent = text;
+  statusEl.classList.add("show");
+  if (!sticky) setTimeout(function () { statusEl.classList.remove("show"); }, 2200);
+}
+function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function getPath(obj, p) { return p.split(".").reduce(function (o, k) { return o == null ? undefined : o[k]; }, obj); }
+function lines(s) { return String(s || "").split(CR).join("").split(NL).map(function (x) { return x.trim(); }).filter(Boolean); }
+
+function gate(msg) {
+  state = null;
+  app.innerHTML = '<div class="card gate">' + (msg ? '<div class="err">' + esc(msg) + '</div>' : '') +
+    '<label class="muted" style="font-size:0.8rem">Guildmaster password</label><input id="g-key" type="password" autocomplete="current-password">' +
+    '<label class="muted" style="font-size:0.8rem;display:block;margin-top:0.6rem">Your name (logged with every change)</label><input id="g-by" maxlength="24">' +
+    '<p style="margin:1rem 0 0"><button class="go" id="g-go">Open settings</button></p></div>';
+  if (BY) document.getElementById("g-by").value = BY;
+  var go = function () {
+    KEY = document.getElementById("g-key").value;
+    BY = document.getElementById("g-by").value.trim() || "guildmaster";
+    try { sessionStorage.setItem("gmkey", KEY); sessionStorage.setItem("gmby", BY); } catch (e) {}
+    load();
+  };
+  document.getElementById("g-go").addEventListener("click", go);
+  document.getElementById("g-key").addEventListener("keydown", function (e) { if (e.key === "Enter") go(); });
+}
+
+function api(pathName, body) {
+  var req = body
+    ? fetch(API + pathName, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ key: KEY, by: BY }, body)) })
+    : fetch(API + pathName + "?key=" + encodeURIComponent(KEY || ""));
+  return req.then(function (r) {
+    return r.json().then(function (j) {
+      if (r.status === 403) { gate("Wrong password."); throw new Error("auth"); }
+      if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
+      return j;
+    });
+  });
+}
+
+function load() {
+  if (!KEY) return gate();
+  api("/api/settings").then(function (j) { state = j; shell(); })
+    .catch(function (e) { if (e.message !== "auth") gate("Could not load settings (" + e.message + ") — the server runs on the guild PC."); });
+}
+
+// ---------- value <-> control encoding ----------
+function encode(field, v) {
+  switch (field.type) {
+    case "list": case "names": return (v || []).join(NL);
+    case "map": return Object.keys(v || {}).map(function (k) { return k + " = " + v[k]; }).join(NL);
+    case "nummap": return Object.keys(v || {}).map(function (k) { return k + " = " + v[k]; }).join(NL);
+    case "json": return JSON.stringify(v === undefined ? null : v, null, 2);
+    case "bool": return v ? "true" : "false";
+    default: return v == null ? "" : String(v);
+  }
+}
+function decode(field, el) {
+  switch (field.type) {
+    case "list": case "names": return lines(el.value);
+    case "map": case "nummap": {
+      var out = {};
+      lines(el.value).forEach(function (l) { var i = l.indexOf("="); if (i < 0) throw new Error(field.label + ": use key = value, one per line"); var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k) out[k] = field.type === "nummap" ? Number(v) : v; });
+      return out;
+    }
+    case "json": try { return JSON.parse(el.value); } catch (e) { throw new Error(field.label + ": not valid JSON (" + e.message + ")"); }
+    case "bool": return el.checked;
+    case "number": return el.value === "" ? NaN : Number(el.value);
+    default: return el.value;
+  }
+}
+function control(field, v, id) {
+  var enc = encode(field, v);
+  if (field.type === "bool") return '<input type="checkbox" id="' + id + '"' + (v ? " checked" : "") + '>';
+  if (field.type === "select") return '<select id="' + id + '">' + field.options.map(function (o) { return '<option' + (o === v ? " selected" : "") + '>' + esc(o) + '</option>'; }).join("") + '</select>';
+  if (field.type === "number") return '<input type="number" step="any" id="' + id + '" value="' + esc(enc) + '">';
+  if (field.type === "date") return '<input type="date" id="' + id + '" value="' + esc(enc) + '">';
+  if (field.type === "text") return '<input type="text" id="' + id + '" value="' + esc(enc) + '">';
+  var rows = Math.min(14, Math.max(3, enc.split(NL).length + 1));
+  return '<textarea id="' + id + '" rows="' + rows + '"' + (field.type === "json" ? ' class="code"' : "") + '>' + esc(enc) + '</textarea>';
+}
+
+// ---------- shell + navigation ----------
+function shell() {
+  var secs = state.meta.sections;
+  if (!current || !secs.some(function (s) { return s.id === current; })) current = secs[0].id;
+  var h = '<div class="bar"><button class="warn" id="rebuild">🔄 Rebuild standings &amp; republish site</button>' +
+    '<button id="restart">♻️ Restart bot</button><span class="sp"></span><span class="muted" style="font-size:0.8rem">Signed in as ' + esc(BY) + ' · <a href="#" id="signout" style="color:#b8aed3">sign out</a></span></div>' +
+    '<div id="restartnote"></div>' +
+    '<div class="layout"><div class="side">' + secs.map(function (s) { return '<button data-sec="' + s.id + '"' + (s.id === current ? ' class="on"' : "") + '>' + esc(s.title) + '</button>'; }).join("") + '</div>' +
+    '<div id="main"></div></div>' +
+    '<div class="card"><h2>Recent changes</h2><div class="recent" id="recent">' + (state.recent || []).slice(0, 12).map(function (r) {
+      var d = new Date(r.at), pad = function (n) { return (n < 10 ? "0" : "") + n; };
+      var when = isNaN(d) ? String(r.at).slice(0, 16) : d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+      return '<div>' + esc(when) + ' · <b>' + esc(r.by) + '</b> · ' + esc(r.file) + (r.path && r.path !== "*" ? " › " + esc(r.path) : " (whole file)") + (r.path !== "*" ? ': ' + esc(r.before) + ' → ' + esc(r.after) : "") + '</div>';
+    }).join("") + (state.recent && state.recent.length ? "" : '<div>No changes logged yet.</div>') + '</div></div>';
+  app.innerHTML = h;
+  app.querySelectorAll(".side button").forEach(function (b) { b.addEventListener("click", function () { current = b.dataset.sec; try { sessionStorage.setItem("gmsection", current); } catch (e) {} shell(); }); });
+  document.getElementById("rebuild").addEventListener("click", function () {
+    var b = this; b.disabled = true;
+    api("/api/settings/rebuild", {}).then(function () { flash("Rebuilding — standings and the site republish in a minute or two", true); setTimeout(function () { b.disabled = false; }, 60000); })
+      .catch(function (e) { b.disabled = false; flash("Rebuild failed: " + e.message, true); });
+  });
+  document.getElementById("restart").addEventListener("click", function () {
+    if (!confirm("Restart the bot now? It is back in about 15 seconds; commands sent meanwhile are lost.")) return;
+    api("/api/settings/restart", {}).then(function () { restartPending = []; noteRestart(); flash("Restarting — back in ~15s", true); }).catch(function (e) { flash("Restart failed: " + e.message, true); });
+  });
+  document.getElementById("signout").addEventListener("click", function (e) { e.preventDefault(); KEY = null; try { sessionStorage.removeItem("gmkey"); } catch (x) {} gate(); });
+  noteRestart();
+  section(secs.filter(function (s) { return s.id === current; })[0]);
+}
+function noteRestart() {
+  var el = document.getElementById("restartnote");
+  if (!el) return;
+  el.innerHTML = restartPending.length ? '<div class="banner">↻ Restart needed for: ' + esc(restartPending.join(", ")) + ' — use the Restart bot button when convenient.</div>' : "";
+}
+
+// ---------- schema-driven sections ----------
+function section(sec) {
+  var main = document.getElementById("main");
+  if (sec.widget === "roster") return roster(sec, main);
+  if (sec.widget === "sets") return sets(sec, main);
+  if (sec.widget === "bosses") return bosses(sec, main);
+  if (sec.widget === "raw") return raw(sec, main);
+  var doc = state.files[sec.file] || {};
+  var h = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p>';
+  if (sec.id === "raidroles") h += '<div class="names">Roster: ' + esc(state.meta.rosterNames.join(", ")) + '</div>';
+  h += sec.fields.map(function (f, i) {
+    return '<div class="field"><div class="lb">' + esc(f.label) + (f.restart ? ' <span class="rs">↻ restart</span>' : "") + (f.help ? '<span class="help">' + esc(f.help) + '</span>' : "") + '</div><div>' + control(f, getPath(doc, f.key), "f" + i) + '</div></div>';
+  }).join("");
+  h += '<div class="bar"><span class="sp"></span><span class="muted" id="dirtycount" style="font-size:0.8rem"></span><button class="go" id="save">Save changes</button></div></div>';
+  main.innerHTML = h;
+  var originals = sec.fields.map(function (f) { return encode(f, getPath(doc, f.key)); });
+  var isDirty = function (f, i) {
+    var el = document.getElementById("f" + i);
+    var now = f.type === "bool" ? (el.checked ? "true" : "false") : el.value;
+    return now !== originals[i];
+  };
+  var refresh = function () {
+    var n = 0;
+    sec.fields.forEach(function (f, i) { var d = isDirty(f, i); document.getElementById("f" + i).classList.toggle("dirty", d); if (d) n++; });
+    document.getElementById("dirtycount").textContent = n ? n + " unsaved" : "";
+  };
+  sec.fields.forEach(function (f, i) { var el = document.getElementById("f" + i); el.addEventListener("input", refresh); el.addEventListener("change", refresh); });
+  document.getElementById("save").addEventListener("click", function () {
+    var todo = [];
+    try {
+      sec.fields.forEach(function (f, i) { if (isDirty(f, i)) todo.push({ field: f, value: decode(f, document.getElementById("f" + i)) }); });
+    } catch (e) { return flash(e.message, true); }
+    if (!todo.length) return flash("Nothing to save");
+    var btn = this; btn.disabled = true;
+    var saved = 0, errors = [];
+    var next = function () {
+      var t = todo.shift();
+      if (!t) {
+        btn.disabled = false;
+        if (errors.length) flash("Saved " + saved + ", failed: " + errors.join(" · "), true); else flash("Saved " + saved + " setting" + (saved === 1 ? "" : "s"));
+        noteRestart();
+        return section(sec);
+      }
+      api("/api/settings", { file: sec.file, path: t.field.key, value: t.value }).then(function (j) {
+        state.files[sec.file] = j.doc; saved++;
+        if (j.restart && restartPending.indexOf(t.field.label) < 0) restartPending.push(t.field.label);
+        next();
+      }).catch(function (e) { if (e.message === "auth") return; errors.push(e.message); next(); });
+    };
+    next();
+  });
+}
+
+// ---------- roster table ----------
+function roster(sec, main) {
+  var rows = (state.files.roster || []).slice().sort(function (a, b) { return a.main.localeCompare(b.main); });
+  var ranks = state.meta.ranks;
+  var opt = function (list, v, allowFree) { return list.map(function (o) { return '<option' + (o === v ? " selected" : "") + '>' + esc(o) + '</option>'; }).join("") + (allowFree && list.indexOf(v) < 0 ? '<option selected>' + esc(v) + '</option>' : ""); };
+  var row = function (r) {
+    return '<tr>' +
+      '<td><input class="wide" data-k="main" value="' + esc(r.main) + '"></td>' +
+      '<td><select data-k="class"><option></option>' + opt(state.meta.classes, r.class) + '</select></td>' +
+      '<td><select data-k="role">' + opt(state.meta.roles, r.role || "dps") + '</select></td>' +
+      '<td><select data-k="rank"><option></option>' + opt(ranks, r.rank, true) + '</select></td>' +
+      '<td><input data-k="discord" value="' + esc(r.discord || "") + '"></td>' +
+      '<td><input class="wide" data-k="discordId" value="' + esc(r.discordId || "") + '"></td>' +
+      '<td><input type="date" data-k="joined" value="' + esc(r.joined || "") + '"></td>' +
+      '<td><input class="wide" data-k="alts" value="' + esc((r.alts || []).join(", ")) + '" placeholder="alt, alt"></td>' +
+      '<td style="text-align:center"><input type="checkbox" data-k="inactive"' + (r.inactive ? " checked" : "") + '></td>' +
+      '<td><button class="small" data-del>✕</button></td></tr>';
+  };
+  main.innerHTML = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p><div class="tblwrap"><table class="tbl"><thead><tr>' +
+    '<th>Main</th><th>Class</th><th>Role</th><th>Rank</th><th>Discord name</th><th>Discord id</th><th>Joined</th><th>Alts</th><th>Inactive</th><th></th></tr></thead><tbody id="rb">' +
+    rows.map(row).join("") + '</tbody></table></div>' +
+    '<div class="bar"><button id="add">＋ Add raider</button><span class="sp"></span><button class="go" id="save">Save roster</button></div></div>';
+  var tb = document.getElementById("rb");
+  var wire = function () { tb.querySelectorAll("[data-del]").forEach(function (b) { b.onclick = function () { b.closest("tr").remove(); }; }); };
+  wire();
+  document.getElementById("add").addEventListener("click", function () { tb.insertAdjacentHTML("beforeend", row({ main: "", class: "", role: "dps", rank: ranks[0] || "", alts: [] })); wire(); });
+  document.getElementById("save").addEventListener("click", function () {
+    var doc = [];
+    tb.querySelectorAll("tr").forEach(function (tr) {
+      var g = function (k) { return tr.querySelector('[data-k="' + k + '"]'); };
+      var main = g("main").value.trim();
+      if (!main) return;
+      doc.push({ main: main, class: g("class").value, role: g("role").value, rank: g("rank").value, discord: g("discord").value.trim(), discordId: g("discordId").value.trim(), joined: g("joined").value, alts: g("alts").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean), inactive: g("inactive").checked });
+    });
+    var btn = this; btn.disabled = true;
+    api("/api/settings", { file: "roster", doc: doc }).then(function (j) { state.files.roster = j.doc; state.meta.rosterNames = j.doc.filter(function (r) { return !r.inactive; }).map(function (r) { return r.main; }).sort(); flash("Roster saved — " + j.doc.length + " raiders"); btn.disabled = false; })
+      .catch(function (e) { btn.disabled = false; if (e.message !== "auth") flash(e.message, true); });
+  });
+}
+
+// ---------- resist sets table ----------
+function sets(sec, main) {
+  var cur = state.files.sets || {};
+  // Active raiders plus anyone who already has a set recorded (inactive raiders keep theirs).
+  var names = state.meta.rosterNames.slice();
+  Object.keys(cur).forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
+  names.sort(function (a, b) { return a.localeCompare(b); });
+  var types = state.meta.resists;
+  main.innerHTML = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p><div class="tblwrap"><table class="tbl"><thead><tr><th>Raider</th>' +
+    types.map(function (t) { return '<th>' + esc(t) + '</th>'; }).join("") + '<th>Updated</th></tr></thead><tbody>' +
+    names.map(function (n) {
+      var r = cur[n] || {};
+      return '<tr data-n="' + esc(n) + '"><td>' + esc(n) + '</td>' + types.map(function (t) { return '<td><input class="num" type="number" min="0" max="999" step="1" data-t="' + t + '" value="' + (r[t] || "") + '"></td>'; }).join("") +
+        '<td class="muted">' + esc(r.updatedAt ? r.updatedAt + " · " + (r.updatedBy || "") : "") + '</td></tr>';
+    }).join("") + '</tbody></table></div><div class="bar"><span class="sp"></span><button class="go" id="save">Save resist sets</button></div></div>';
+  document.getElementById("save").addEventListener("click", function () {
+    var doc = {}, today = new Date().toISOString().slice(0, 10);
+    main.querySelectorAll("tr[data-n]").forEach(function (tr) {
+      var n = tr.dataset.n, rec = {}, any = false, changed = false, old = cur[n] || {};
+      tr.querySelectorAll("input[data-t]").forEach(function (inp) { var v = inp.value === "" ? 0 : Number(inp.value); if ((old[inp.dataset.t] || 0) !== v) changed = true; if (v > 0) { rec[inp.dataset.t] = v; any = true; } });
+      if (!any) return;
+      rec.updatedAt = changed ? today : (old.updatedAt || today);
+      rec.updatedBy = changed ? BY : (old.updatedBy || BY);
+      doc[n] = rec;
+    });
+    var btn = this; btn.disabled = true;
+    api("/api/settings", { file: "sets", doc: doc }).then(function (j) { state.files.sets = j.doc; flash("Resist sets saved"); btn.disabled = false; section(sec); })
+      .catch(function (e) { btn.disabled = false; if (e.message !== "auth") flash(e.message, true); });
+  });
+}
+
+// ---------- boss templates (JSON per boss) ----------
+function bosses(sec, main) {
+  var doc = state.files.assignments || { prefs: {}, bosses: [] };
+  var list = doc.bosses || [];
+  var pick = null;
+  try { pick = sessionStorage.getItem("gmboss"); } catch (e) {}
+  if (!list.some(function (b) { return b.id === pick; })) pick = list.length ? list[0].id : null;
+  var b = list.filter(function (x) { return x.id === pick; })[0];
+  main.innerHTML = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p>' +
+    '<div class="bar"><select id="bsel" style="max-width:320px">' + list.map(function (x) { return '<option value="' + esc(x.id) + '"' + (x.id === pick ? " selected" : "") + '>' + esc(x.name) + ' — ' + esc(x.zone) + '</option>'; }).join("") + '</select>' +
+    '<button id="newboss">＋ New boss</button><span class="sp"></span><button class="small warn" id="delboss">Delete this boss</button></div>' +
+    '<textarea class="code" id="bjson" rows="30">' + esc(b ? JSON.stringify(b, null, 2) : "") + '</textarea>' +
+    '<div class="bar"><span class="sp"></span><button class="go" id="save">Save boss</button></div></div>';
+  document.getElementById("bsel").addEventListener("change", function () { try { sessionStorage.setItem("gmboss", this.value); } catch (e) {} section(sec); });
+  var saveDoc = function (nextDoc, msg) {
+    api("/api/settings", { file: "assignments", doc: nextDoc }).then(function (j) { state.files.assignments = j.doc; state.meta.bossIds = j.doc.bosses.map(function (x) { return { id: x.id, name: x.name, zone: x.zone }; }); flash(msg); section(sec); })
+      .catch(function (e) { if (e.message !== "auth") flash(e.message, true); });
+  };
+  document.getElementById("save").addEventListener("click", function () {
+    var parsed;
+    try { parsed = JSON.parse(document.getElementById("bjson").value); } catch (e) { return flash("Not valid JSON: " + e.message, true); }
+    if (!parsed || !parsed.id) return flash("The boss needs an id", true);
+    var nextDoc = JSON.parse(JSON.stringify(doc));
+    var i = nextDoc.bosses.findIndex(function (x) { return x.id === pick; });
+    if (i < 0) nextDoc.bosses.push(parsed); else nextDoc.bosses[i] = parsed;
+    try { sessionStorage.setItem("gmboss", parsed.id); } catch (e) {}
+    saveDoc(nextDoc, "Saved " + parsed.name);
+  });
+  document.getElementById("newboss").addEventListener("click", function () {
+    var id = prompt("Short id for the new boss (letters only, e.g. kalecgos):");
+    if (!id) return;
+    id = id.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!id || list.some(function (x) { return x.id === id; })) return flash("That id is taken or empty", true);
+    var nextDoc = JSON.parse(JSON.stringify(doc));
+    nextDoc.bosses.push({ id: id, name: id.charAt(0).toUpperCase() + id.slice(1), zone: b ? b.zone : "", notes: [], sections: [
+      { title: "Tanks", type: "slots", slots: [{ label: "MT", role: "tank", pref: "mainTank" }] },
+      { title: "Healers", type: "slots", slots: [{ label: "MT", role: "healer", pref: "tankHealers", healerRole: "tank" }, { label: "Raid", role: "healer", pref: "raidHealers", healerRole: "raid" }] },
+      { title: "Misdirects → MT", type: "rotation", class: ["Hunter"], pref: "misdirects", count: 2, specOrder: ["Beastmastery", "Marksmanship", "Survival"] },
+      { title: "Bloodlust", type: "slots", slots: [{ label: "On pull", class: ["Shaman"], pref: "bloodlust" }] } ] });
+    try { sessionStorage.setItem("gmboss", id); } catch (e) {}
+    saveDoc(nextDoc, "Added " + id + " — edit its template");
+  });
+  document.getElementById("delboss").addEventListener("click", function () {
+    if (!b || !confirm("Delete the " + b.name + " template? (A backup of the file is kept on the guild PC.)")) return;
+    var nextDoc = JSON.parse(JSON.stringify(doc));
+    nextDoc.bosses = nextDoc.bosses.filter(function (x) { return x.id !== pick; });
+    saveDoc(nextDoc, "Deleted " + b.name);
+  });
+}
+
+// ---------- raw files ----------
+function raw(sec, main) {
+  var files = sec.rawFiles;
+  var pick = null;
+  try { pick = sessionStorage.getItem("gmraw"); } catch (e) {}
+  if (files.indexOf(pick) < 0) pick = files[0];
+  main.innerHTML = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p>' +
+    '<div class="bar"><select id="rsel" style="max-width:320px">' + files.map(function (f) { return '<option value="' + f + '"' + (f === pick ? " selected" : "") + '>' + esc(state.meta.files[f]) + '</option>'; }).join("") + '</select></div>' +
+    '<textarea class="code" id="rjson" rows="32">' + esc(JSON.stringify(state.files[pick], null, 2)) + '</textarea>' +
+    '<div class="bar"><span class="sp"></span><button class="go" id="save">Save file</button></div></div>';
+  document.getElementById("rsel").addEventListener("change", function () { try { sessionStorage.setItem("gmraw", this.value); } catch (e) {} section(sec); });
+  document.getElementById("save").addEventListener("click", function () {
+    var parsed;
+    try { parsed = JSON.parse(document.getElementById("rjson").value); } catch (e) { return flash("Not valid JSON: " + e.message, true); }
+    var btn = this; btn.disabled = true;
+    api("/api/settings", { file: pick, doc: parsed }).then(function (j) { state.files[pick] = j.doc; flash("Saved " + state.meta.files[pick]); btn.disabled = false; })
+      .catch(function (e) { btn.disabled = false; if (e.message !== "auth") flash(e.message, true); });
+  });
+}
+
+if (!API || API.indexOf("http") !== 0) {
+  app.innerHTML = '<div class="err">Settings are not switched on yet — the bot needs a public API address.</div>';
+} else {
+  load();
+}
+</script></div></body></html>
