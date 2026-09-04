@@ -129,6 +129,7 @@ function render() {
     h += '<figure class="diagram" id="diag' + i + '" hidden><img id="diagimg' + i + '" alt="' + esc(d.caption) + '"><figcaption>' + esc(d.caption) + '</figcaption></figure>';
   });
   if (b.warnings.length) h += '<div class="banner">⚠ ' + b.warnings.map(esc).join('<br>') + '</div>';
+  if (b.pinned) h += '<div class="banner" style="background:#1d2536;border-color:#4aa8ff55;color:#a6d4ff">✎ ' + b.pinned + ' officer change' + (b.pinned === 1 ? '' : 's') + ' on this boss tonight' + (OKEY ? ' <button class="mini" id="resetpins" style="margin-left:0.6rem">↺ back to automatic</button>' : '') + '</div>';
   h += '<div class="grid">';
   b.sections.forEach(function (s) {
     // Optional slots (Teron's 6th healer) stay hidden until an officer asks for
@@ -137,13 +138,25 @@ function render() {
     var optBtn = !OKEY ? '' : opt.hidden ? '<button class="mini" data-extra="' + b.id + '" data-on="1">＋ add a healer (flex pick)</button>'
       : (opt.shown && extra[b.id]) ? '<button class="mini" data-extra="' + b.id + '" data-on="0">− back to the normal healer count</button>' : '';
     h += '<div class="card"><h3>' + iconFor(s.title) + esc(s.title) + optBtn + '</h3>';
-    s.rows.forEach(function (r) {
+    s.rows.forEach(function (r, i) {
       var pl = r.list ? names(r.list) : (r.player ? name(r.player) : '<span class="warn">unfilled</span>');
+      // Officer mode: every row is a dropdown of who the slot accepts; a pick swaps with the current holder.
+      if (OKEY && !r.list && r.options && r.options.length) {
+        var cur = r.player || '';
+        var have = r.options.some(function (o) { return o.main === cur; });
+        pl = '<select class="pick" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">— automatic —</option>' +
+          (cur && !have ? '<option selected>' + esc(cur) + '</option>' : '') +
+          r.options.map(function (o) { return '<option value="' + esc(o.main) + '"' + (o.main === cur ? ' selected' : '') + '>' + esc(o.main) + (o.flex ? ' (flex)' : '') + '</option>'; }).join('') + '</select>';
+      }
+      if (OKEY && r.list && r.options && r.options.length) {
+        pl += ' <select class="move" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">move here…</option>' + r.options.map(function (o) { return '<option value="' + esc(o.main) + '">' + esc(o.main) + '</option>'; }).join('') + '</select>';
+      }
+      var ov = r.override ? ' <span class="alt" title="changed by an officer tonight">✎ ' + esc(r.override.by || 'officer') + (r.override.via === 'swap' ? ' (swap)' : '') + '</span>' : '';
       var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
       var res = (r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '') + (r.flex ? ' <span class="alt">flex: ' + esc(r.flex) + '</span>' : '') + (r.backup ? ' <span class="alt">· backup ' + name(r.backup) + '</span>' : '');
       var wr = r.warn ? ' <span class="warn">⚠ ' + esc(r.warn) + '</span>' : '';
       var lb = r.arrow ? name(r.label) + ' →' : labelHtml(r.label);
-      h += '<div class="row"><span class="lb">' + lb + '</span><span class="pl">' + pl + alt + res + wr + '</span></div>';
+      h += '<div class="row"><span class="lb">' + lb + '</span><span class="pl">' + pl + ov + alt + res + wr + '</span></div>';
     });
     h += '</div>';
   });
@@ -155,6 +168,10 @@ function render() {
   }
   app.innerHTML = h;
   pinTabs();
+  app.querySelectorAll('select.pick').forEach(function (sel) { sel.addEventListener('change', function () { pin({ section: sel.dataset.sec, idx: Number(sel.dataset.idx), player: sel.value || null, clear: !sel.value }); }); });
+  app.querySelectorAll('select.move').forEach(function (sel) { sel.addEventListener('change', function () { if (sel.value) pin({ section: sel.dataset.sec, idx: Number(sel.dataset.idx), player: sel.value, listMove: true }); }); });
+  var rp = document.getElementById('resetpins');
+  if (rp) rp.addEventListener('click', function () { if (confirm('Drop every officer change on this boss and go back to the automatic assignment?')) pin({ resetBoss: true }); });
   var cg = document.getElementById('copygroups');
   if (cg) cg.addEventListener('click', function () {
     var t = document.getElementById('groupstext').textContent;
@@ -175,6 +192,32 @@ function render() {
 }
 
 var extra = {}; // bossId -> true while the officer wants the optional slots filled
+var BYNAME = null; try { BYNAME = sessionStorage.getItem('marksby'); } catch (e) {}
+// An officer's change: pinned server-side for tonight, echoed back as fresh data, pushed to every open page.
+function pin(body) {
+  if (!BYNAME) {
+    BYNAME = (prompt('Your name (shown next to your changes)') || '').trim();
+    if (!BYNAME) { render(); return; }
+    try { sessionStorage.setItem('marksby', BYNAME); } catch (e) {}
+  }
+  var ex = Object.keys(extra).filter(function (k) { return extra[k]; });
+  fetch(API + '/api/assignments/pin', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(Object.assign({ key: OKEY, by: BYNAME, date: state.event.date, boss: current, extra: ex }, body)) })
+    .then(function (r) { if (r.status === 403) { OKEY = null; try { sessionStorage.removeItem('markskey'); } catch (x) {} alert('Officer passphrase rejected.'); return load().then(function () { return null; }); } return r.json(); })
+    .then(function (j) { if (!j) return; if (j.error) { alert(j.error); return load(); } state = j; lastV = j.v; render(); })
+    .catch(function (e) { alert('Could not save: ' + e.message); });
+}
+// Live: the server streams a version number; when it changes, refetch. Polling if the stream can't be opened.
+var lastV = null, pollTimer = null;
+function startLive() {
+  var poll = function () { if (!pollTimer) pollTimer = setInterval(function () { if (!document.hidden) load(); }, 20000); };
+  if (!window.EventSource) return poll();
+  try {
+    var es = new EventSource(API + '/api/assignments/events');
+    es.onmessage = function (e) { var v = null; try { v = JSON.parse(e.data).v; } catch (x) {} if (lastV !== null && v !== lastV) load(); lastV = v; };
+    es.onerror = function () { es.close(); poll(); };
+  } catch (e) { poll(); }
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden && state) load(); });
 // Officer passphrase (shared with the marks tracker's session) unlocks the add-a-healer buttons; the API checks it too.
 var OKEY = null; try { OKEY = sessionStorage.getItem('markskey'); } catch (e) {}
 function load() {
@@ -184,7 +227,7 @@ function load() {
       if (r.status === 403) { OKEY = null; try { sessionStorage.removeItem('markskey'); } catch (x) {} extra = {}; alert('Officer passphrase rejected — adding slots needs an officer login.'); return load().then(function () { return null; }); }
       return r.json();
     })
-    .then(function (j) { if (!j) return; if (j.error) throw new Error(j.error); state = j; render(); })
+    .then(function (j) { if (!j) return; if (j.error) throw new Error(j.error); state = j; lastV = j.v; render(); })
     .catch(function (e) { whoEl.textContent = ''; app.innerHTML = '<div class="err">Couldn\'t load assignments (' + esc(e.message) + ') — the server runs on the guild PC; try again in a bit.</div>'; });
 }
 
@@ -193,5 +236,6 @@ if (!API || API.indexOf('http') !== 0) {
 } else {
   try { current = sessionStorage.getItem('assignboss'); } catch (e) {}
   load();
+  startLive();
 }
 </script></div></body></html>
