@@ -85,6 +85,10 @@ function pinTabs() {
   if (nav && tabs) tabs.style.top = nav.offsetHeight + 'px';
 }
 window.addEventListener('resize', pinTabs);
+if (window.ResizeObserver) {
+  var navEl = document.querySelector('.topnav');
+  if (navEl) new ResizeObserver(pinTabs).observe(navEl);
+}
 
 function render() {
   var b = state.bosses.find(function (x) { return x.id === current; }) || state.bosses[0];
