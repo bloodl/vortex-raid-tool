@@ -40,6 +40,8 @@
   .tabs button.z-hyjal { border-color: #4aa8ff; box-shadow: 0 0 6px #4aa8ff55, inset 0 0 6px #4aa8ff22; }
   .tabs button.z-bt.on { color: #7dffb4; background: #16231c; box-shadow: 0 0 14px #2fd77aaa, inset 0 0 8px #2fd77a44; }
   .tabs button.z-hyjal.on { color: #a6d4ff; background: #16202b; box-shadow: 0 0 14px #4aa8ffaa, inset 0 0 8px #4aa8ff44; }
+  .tabs button.z-night { border-color: #b678f0; box-shadow: 0 0 6px #b678f055, inset 0 0 6px #b678f022; }
+  .tabs button.z-night.on { color: #dcc4ff; background: #221a30; box-shadow: 0 0 14px #b678f0aa, inset 0 0 8px #b678f044; }
   .tabs .zl { align-self: center; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: #6f6790; margin: 0 0.3rem 0 0.5rem; }
   /* Packed columns, not a grid: short cards (Tanks, Bloodlust) stack under each
      other instead of being stretched to the tallest card in their row. */
@@ -135,7 +137,7 @@ function render() {
     OKEY = k; try { sessionStorage.setItem('markskey', k); } catch (x) {} render();
   });
   // Tabs grouped by zone with a small label, each button glowing in its zone colour.
-  var zoneClass = function (z) { return /black temple/i.test(z) ? 'z-bt' : /hyjal/i.test(z) ? 'z-hyjal' : ''; };
+  var zoneClass = function (z) { return /black temple/i.test(z) ? 'z-bt' : /hyjal/i.test(z) ? 'z-hyjal' : /raid-wide|all night/i.test(z) ? 'z-night' : ''; };
   var zones = [];
   state.bosses.forEach(function (x) { if (zones.indexOf(x.zone) < 0) zones.push(x.zone); });
   var h = '<div class="tabs">' + pastBar() + zones.map(function (z) {
