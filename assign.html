@@ -14,6 +14,10 @@
   .card h3 .mini { margin-left: auto; font: 600 11px/1 "Segoe UI", system-ui, sans-serif; padding: 0.3rem 0.55rem; border-radius: 6px;
                    border: 1px solid #3a3350; background: #241f31; color: #cfc7e2; cursor: pointer; }
   .card h3 .mini:hover { background: #2e2740; color: #fff; }
+  /* Officer mode: the name stays class-coloured on the same row; the ▾ is a transparent native select. */
+  .dd { position: relative; display: inline-block; margin-left: 0.4rem; padding: 0 0.3rem; border-radius: 5px; color: #9d94b3; font-size: 0.8rem; line-height: 1.3; cursor: pointer; border: 1px solid #2e2740; background: #201c2b; vertical-align: baseline; }
+  .dd:hover { color: #e9e5f2; border-color: #4a4160; }
+  .dd select { position: absolute; inset: -1px; width: calc(100% + 2px); height: calc(100% + 2px); opacity: 0; cursor: pointer; margin: 0; }
   /* Boss tabs stay pinned under the top menubar so the next boss is one click away from anywhere. */
   .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; position: sticky; top: 0; z-index: 900;
           background: #14111c; padding: 0.5rem 0; border-bottom: 1px solid #2a2438; }
@@ -144,12 +148,13 @@ function render() {
       if (OKEY && !r.list && r.options && r.options.length) {
         var cur = r.player || '';
         var have = r.options.some(function (o) { return o.main === cur; });
-        pl = '<select class="pick" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">— automatic —</option>' +
+        pl = (r.player ? name(r.player) : '<span class="warn">unfilled</span>') +
+          '<span class="dd" title="change who does this">▾<select class="pick" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">— automatic —</option>' +
           (cur && !have ? '<option selected>' + esc(cur) + '</option>' : '') +
-          r.options.map(function (o) { return '<option value="' + esc(o.main) + '"' + (o.main === cur ? ' selected' : '') + '>' + esc(o.main) + (o.flex ? ' (flex)' : '') + '</option>'; }).join('') + '</select>';
+          r.options.map(function (o) { return '<option value="' + esc(o.main) + '"' + (o.main === cur ? ' selected' : '') + '>' + esc(o.main) + (o.flex ? ' (flex)' : '') + '</option>'; }).join('') + '</select></span>';
       }
       if (OKEY && r.list && r.options && r.options.length) {
-        pl += ' <select class="move" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">move here…</option>' + r.options.map(function (o) { return '<option value="' + esc(o.main) + '">' + esc(o.main) + '</option>'; }).join('') + '</select>';
+        pl += '<span class="dd" title="move someone into this stack">＋▾<select class="move" data-sec="' + esc(s.title) + '" data-idx="' + i + '"><option value="">move here…</option>' + r.options.map(function (o) { return '<option value="' + esc(o.main) + '">' + esc(o.main) + '</option>'; }).join('') + '</select></span>';
       }
       var ov = r.override ? ' <span class="alt" title="changed by an officer tonight">✎ ' + esc(r.override.by || 'officer') + (r.override.via === 'swap' ? ' (swap)' : '') + '</span>' : '';
       var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
