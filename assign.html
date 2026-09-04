@@ -103,7 +103,15 @@ function render() {
   var roles = { tank: 0, healer: 0, melee: 0, ranged: 0 };
   state.players.forEach(function (p) { roles[p.role] = (roles[p.role] || 0) + 1; classOf[p.main] = p.cls; });
   whoEl.innerHTML = "<b>" + esc(state.event.title || "Raid") + "</b> — " + esc(state.event.date) + " · " + state.players.length + " rostered (" +
-    roles.tank + " tanks · " + roles.healer + " healers · " + roles.melee + " melee · " + roles.ranged + " ranged) · " + (state.live ? "live comp" : "cached comp");
+    roles.tank + " tanks · " + roles.healer + " healers · " + roles.melee + " melee · " + roles.ranged + " ranged) · " + (state.live ? "live comp" : "cached comp") +
+    ' · <a href="#" id="offlogin" style="color:#b8aed3">' + (OKEY ? 'officer mode · sign out' : 'officer login') + '</a>';
+  var ol = document.getElementById('offlogin');
+  if (ol) ol.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (OKEY) { OKEY = null; try { sessionStorage.removeItem('markskey'); } catch (x) {} extra = {}; load(); return; }
+    var k = prompt('Officer passphrase'); if (!k) return;
+    OKEY = k; try { sessionStorage.setItem('markskey', k); } catch (x) {} render();
+  });
   // Tabs grouped by zone with a small label, each button glowing in its zone colour.
   var zoneClass = function (z) { return /black temple/i.test(z) ? 'z-bt' : /hyjal/i.test(z) ? 'z-hyjal' : ''; };
   var zones = [];
@@ -126,7 +134,7 @@ function render() {
     // Optional slots (Teron's 6th healer) stay hidden until an officer asks for
     // them — then the engine fills with a flex pick if no real healer is spare.
     var opt = s.optional || {};
-    var optBtn = opt.hidden ? '<button class="mini" data-extra="' + b.id + '" data-on="1">＋ add a healer (flex pick)</button>'
+    var optBtn = !OKEY ? '' : opt.hidden ? '<button class="mini" data-extra="' + b.id + '" data-on="1">＋ add a healer (flex pick)</button>'
       : (opt.shown && extra[b.id]) ? '<button class="mini" data-extra="' + b.id + '" data-on="0">− back to the normal healer count</button>' : '';
     h += '<div class="card"><h3>' + iconFor(s.title) + esc(s.title) + optBtn + '</h3>';
     s.rows.forEach(function (r) {
@@ -167,10 +175,16 @@ function render() {
 }
 
 var extra = {}; // bossId -> true while the officer wants the optional slots filled
+// Officer passphrase (shared with the marks tracker's session) unlocks the add-a-healer buttons; the API checks it too.
+var OKEY = null; try { OKEY = sessionStorage.getItem('markskey'); } catch (e) {}
 function load() {
   var ex = Object.keys(extra).filter(function (k) { return extra[k]; });
-  return fetch(API + '/api/assignments' + (ex.length ? '?extra=' + encodeURIComponent(ex.join(',')) : '')).then(function (r) { return r.json(); })
-    .then(function (j) { if (j.error) throw new Error(j.error); state = j; render(); })
+  return fetch(API + '/api/assignments' + (ex.length ? '?extra=' + encodeURIComponent(ex.join(',')) + '&key=' + encodeURIComponent(OKEY || '') : ''))
+    .then(function (r) {
+      if (r.status === 403) { OKEY = null; try { sessionStorage.removeItem('markskey'); } catch (x) {} extra = {}; alert('Officer passphrase rejected — adding slots needs an officer login.'); return load().then(function () { return null; }); }
+      return r.json();
+    })
+    .then(function (j) { if (!j) return; if (j.error) throw new Error(j.error); state = j; render(); })
     .catch(function (e) { whoEl.textContent = ''; app.innerHTML = '<div class="err">Couldn\'t load assignments (' + esc(e.message) + ') — the server runs on the guild PC; try again in a bit.</div>'; });
 }
 
