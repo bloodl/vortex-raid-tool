@@ -254,10 +254,11 @@ function roster(sec, main) {
       '<td><input type="date" data-k="joined" value="' + esc(r.joined || "") + '"></td>' +
       '<td><input class="wide" data-k="alts" value="' + esc((r.alts || []).join(", ")) + '" placeholder="alt, alt"></td>' +
       '<td style="text-align:center"><input type="checkbox" data-k="inactive"' + (r.inactive ? " checked" : "") + '></td>' +
+      '<td style="text-align:center"><input type="checkbox" data-k="pug"' + (r.pug ? " checked" : "") + '></td>' +
       '<td><button class="small" data-del>✕</button></td></tr>';
   };
   main.innerHTML = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p><div class="tblwrap"><table class="tbl"><thead><tr>' +
-    '<th>Main</th><th>Class</th><th>Role</th><th>Rank</th><th>Discord name</th><th>Discord id</th><th>Joined</th><th>Alts</th><th>Inactive</th><th></th></tr></thead><tbody id="rb">' +
+    '<th>Main</th><th>Class</th><th>Role</th><th>Rank</th><th>Discord name</th><th>Discord id</th><th>Joined</th><th>Alts</th><th>Inactive</th><th title="Pickup raider: raids with us, stays out of the loot system">PUG</th><th></th></tr></thead><tbody id="rb">' +
     rows.map(row).join("") + '</tbody></table></div>' +
     '<div class="bar"><button id="add">＋ Add raider</button><span class="sp"></span><button class="go" id="save">Save roster</button></div></div>';
   var tb = document.getElementById("rb");
@@ -270,7 +271,7 @@ function roster(sec, main) {
       var g = function (k) { return tr.querySelector('[data-k="' + k + '"]'); };
       var main = g("main").value.trim();
       if (!main) return;
-      doc.push({ main: main, class: g("class").value, role: g("role").value, rank: g("rank").value, discord: g("discord").value.trim(), discordId: g("discordId").value.trim(), joined: g("joined").value, alts: g("alts").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean), inactive: g("inactive").checked });
+      doc.push({ main: main, class: g("class").value, role: g("role").value, rank: g("rank").value, discord: g("discord").value.trim(), discordId: g("discordId").value.trim(), joined: g("joined").value, alts: g("alts").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean), inactive: g("inactive").checked, pug: g("pug").checked });
     });
     var btn = this; btn.disabled = true;
     api("/api/settings", { file: "roster", doc: doc }).then(function (j) { state.files.roster = j.doc; state.meta.rosterNames = j.doc.filter(function (r) { return !r.inactive; }).map(function (r) { return r.main; }).sort(); flash("Roster saved — " + j.doc.length + " raiders"); btn.disabled = false; })
