@@ -93,7 +93,7 @@ var ICONS = [
   [/curse of tongues|curses/i, "spell_shadow_curseoftounges"], [/curse of weakness/i, "spell_shadow_curseofmannoroth"], [/frost trap/i, "spell_frost_chainsofice"],
   [/kick|interrupt/i, "ability_kick"], [/shadowfiend/i, "spell_shadow_shadowfiend"], [/taunt/i, "spell_nature_reincarnation"], [/dispel/i, "spell_holy_dispelmagic"],
   [/healing reduction/i, "ability_rogue_disembowel"], [/soak/i, "spell_shadow_lifedrain02"], [/seethe/i, "ability_warrior_challange"], [/zone|position/i, "inv_misc_map02"],
-  [/tank/i, "ability_defend"], [/heal/i, "spell_holy_flashheal"], [/swap|groups/i, "inv_misc_groupneedmore"],
+  [/debuff|expose armor/i, "ability_warrior_riposte"], [/demo(ralizing)? shout/i, "ability_warrior_warcry"], [/tank/i, "ability_defend"], [/heal/i, "spell_holy_flashheal"], [/swap|groups/i, "inv_misc_groupneedmore"],
 ];
 function iconFor(title) { for (var i = 0; i < ICONS.length; i++) if (ICONS[i][0].test(title)) return '<img src="https://wow.zamimg.com/images/wow/icons/medium/' + ICONS[i][1] + '.jpg" alt="" loading="lazy">'; return ""; }
 function name(n) { var c = CLASS_COLOR[classOf[n]]; return c ? '<span style="color:' + c + '">' + esc(n) + '</span>' : esc(n); }
