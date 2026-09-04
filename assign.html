@@ -11,7 +11,9 @@
   h3 { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: #b8aed3; margin: 0 0 0.45rem; display: flex; align-items: center; gap: 0.45rem; }
   h3 img, h2 img { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #3a3350; }
   .muted { color: #9d94b3; } .sub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 1rem; }
-  .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; }
+  /* Boss tabs stay pinned under the top menubar so the next boss is one click away from anywhere. */
+  .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.8rem 0 1.2rem; position: sticky; top: 0; z-index: 900;
+          background: #14111c; padding: 0.5rem 0; border-bottom: 1px solid #2a2438; }
   .tabs button { background: #1b1726; color: #b8aed3; border: 1px solid #2a2438; border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.85rem; cursor: pointer; transition: box-shadow 0.15s; }
   /* Zone colour-coding: Black Temple glows fel green (warglaive style), Hyjal glows blue. */
   .tabs button.z-bt { border-color: #2fd77a; box-shadow: 0 0 6px #2fd77a55, inset 0 0 6px #2fd77a22; }
@@ -77,6 +79,13 @@ function labelHtml(lb) {
   return esc(lb);
 }
 
+// The menubar's height varies (it wraps on phones), so the sticky offset is measured, not guessed.
+function pinTabs() {
+  var nav = document.querySelector('.topnav'), tabs = document.querySelector('.tabs');
+  if (nav && tabs) tabs.style.top = nav.offsetHeight + 'px';
+}
+window.addEventListener('resize', pinTabs);
+
 function render() {
   var b = state.bosses.find(function (x) { return x.id === current; }) || state.bosses[0];
   if (!b) { app.innerHTML = '<div class="err">No boss templates.</div>'; return; }
@@ -122,6 +131,7 @@ function render() {
       '<pre id="groupstext" style="margin:0;white-space:pre-wrap;font:13px/1.5 Consolas,ui-monospace,monospace;color:#cfc7e2">' + esc(b.groupsExport) + '</pre></div>';
   }
   app.innerHTML = h;
+  pinTabs();
   var cg = document.getElementById('copygroups');
   if (cg) cg.addEventListener('click', function () {
     var t = document.getElementById('groupstext').textContent;
