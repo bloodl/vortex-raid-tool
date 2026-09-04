@@ -144,7 +144,7 @@ function render() {
   // chosen zone's bosses underneath — switching zone swaps the whole boss row.
   var zones = [];
   state.bosses.forEach(function (x) { if (zones.indexOf(x.zone) < 0) zones.push(x.zone); });
-  var zoneLabel = function (z) { return /hyjal/i.test(z) ? 'Mount Hyjal' : z; };
+  var zoneLabel = function (z) { return /hyjal/i.test(z) ? 'Mount Hyjal' : /raid-wide/i.test(z) ? 'All night' : z; };
   var inZone = state.bosses.filter(function (x) { return x.zone === b.zone; });
   var h = '<div class="tabs">' + pastBar() +
     '<div class="zrow">' + zones.map(function (z) {
