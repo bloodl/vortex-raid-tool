@@ -14,6 +14,11 @@
   .card h3 .mini { margin-left: auto; font: 600 11px/1 "Segoe UI", system-ui, sans-serif; padding: 0.3rem 0.55rem; border-radius: 6px;
                    border: 1px solid #3a3350; background: #241f31; color: #cfc7e2; cursor: pointer; }
   .card h3 .mini:hover { background: #2e2740; color: #fff; }
+  .card h3 .pm { margin-left: auto; display: inline-flex; gap: 0.25rem; }
+  .card h3 .pm .mini { margin-left: 0; min-width: 1.8rem; font-size: 13px; padding: 0.15rem 0.4rem; }
+  .hist { flex: 0 0 100%; color: #6f6790; font-size: 0.74rem; padding: 0.1rem 0 0.15rem; }
+  .hist b { color: #8b82a6; font-weight: 600; }
+  .row { flex-wrap: wrap; }
   /* Officer mode: the name stays class-coloured on the same row; the ▾ is a transparent native select. */
   .dd { position: relative; display: inline-block; margin-left: 0.4rem; padding: 0 0.3rem; border-radius: 5px; color: #9d94b3; font-size: 0.8rem; line-height: 1.3; cursor: pointer; border: 1px solid #2e2740; background: #201c2b; vertical-align: baseline; }
   .dd:hover { color: #e9e5f2; border-color: #4a4160; }
@@ -41,7 +46,7 @@
   .row { display: flex; gap: 0.6rem; padding: 0.28rem 0; border-bottom: 1px solid #221d2e; font-size: 0.92rem; align-items: baseline; }
   .row:last-child { border-bottom: 0; }
   .row .lb { color: #9d94b3; flex: 0 0 44%; }
-  .row .pl { font-weight: 600; }
+  .row .pl { font-weight: 600; flex: 1 1 0; min-width: 0; }
   .row .alt { color: #6f6790; font-size: 0.8rem; font-weight: 400; }
   .mk { display: inline-block; width: 1.1em; text-align: center; margin-right: 0.3rem; font-size: 1.05em; }
   .warn { color: #ffb8b8; } .banner { background: #3a2030; border: 1px solid #ff8f8f55; color: #ffb8b8; border-radius: 10px; padding: 0.6rem 0.9rem; margin: 0.6rem 0; font-size: 0.9rem; }
@@ -113,7 +118,10 @@ function render() {
   state.players.forEach(function (p) { roles[p.role] = (roles[p.role] || 0) + 1; classOf[p.main] = p.cls; });
   whoEl.innerHTML = "<b>" + esc(state.event.title || "Raid") + "</b> — " + esc(state.event.date) + " · " + state.players.length + " rostered (" +
     roles.tank + " tanks · " + roles.healer + " healers · " + roles.melee + " melee · " + roles.ranged + " ranged) · " + (state.live ? "live comp" : "cached comp") +
-    ' · <a href="#" id="offlogin" style="color:#b8aed3">' + (OKEY ? 'officer mode · sign out' : 'officer login') + '</a>';
+    ' · <a href="#" id="offlogin" style="color:#b8aed3">' + (OKEY ? 'officer mode · sign out' : 'officer login') + '</a>' +
+    (OKEY ? ' · <a href="#" id="histtoggle" style="color:#b8aed3">' + (showHist ? 'hide history' : '🕘 history') + '</a>' : '');
+  var ht = document.getElementById('histtoggle');
+  if (ht) ht.addEventListener('click', function (e) { e.preventDefault(); showHist = !showHist; try { sessionStorage.setItem('assignhist', showHist ? '1' : ''); } catch (x) {} render(); });
   var ol = document.getElementById('offlogin');
   if (ol) ol.addEventListener('click', function (e) {
     e.preventDefault();
@@ -144,8 +152,7 @@ function render() {
     // Optional slots (Teron's 6th healer) stay hidden until an officer asks for
     // them — then the engine fills with a flex pick if no real healer is spare.
     var opt = s.optional || {};
-    var optBtn = !OKEY ? '' : opt.hidden ? '<button class="mini" data-extra="' + b.id + '" data-on="1">＋ add a healer (flex pick)</button>'
-      : (opt.shown && extra[b.id]) ? '<button class="mini" data-extra="' + b.id + '" data-on="0">− back to the normal healer count</button>' : '';
+    var optBtn = (OKEY && (opt.hidden || opt.shown)) ? '<span class="pm"><button class="mini" data-extra="' + b.id + '" data-on="1" title="add the optional healer slot (flex pick if no spare healer)"' + (opt.hidden ? '' : ' disabled') + '>＋</button><button class="mini" data-extra="' + b.id + '" data-on="0" title="back to the normal healer count"' + (opt.shown && extra[b.id] ? '' : ' disabled') + '>−</button></span>' : '';
     h += '<div class="card"><h3>' + iconFor(s.title) + esc(s.title) + optBtn + '</h3>';
     s.rows.forEach(function (r, i) {
       var pl = r.list ? names(r.list) : (r.player ? name(r.player) : '<span class="warn">unfilled</span>');
@@ -160,11 +167,12 @@ function render() {
         pl += '<span class="dd" title="move someone into this stack" data-kind="move" data-sec="' + esc(s.title) + '" data-idx="' + i + '">＋▾</span>';
       }
       var ov = r.override ? ' <span class="alt" title="changed by an officer tonight">✎ ' + esc(r.override.by || 'officer') + (r.override.via === 'swap' ? ' (swap)' : '') + '</span>' : '';
+      var hist = (showHist && r.history && r.history.length) ? '<div class="hist">' + r.history.map(function (x) { return '<b>' + esc(x.date.slice(5)) + '</b> ' + (x.list ? '<span title="' + esc(x.list.join(', ')) + '">' + x.list.length + ' names</span>' : x.player ? name(x.player) : '—'); }).join(' · ') + '</div>' : '';
       var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
       var res = (r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '') + (r.flex ? ' <span class="alt">flex: ' + esc(r.flex) + '</span>' : '') + (r.backup ? ' <span class="alt">· backup ' + name(r.backup) + '</span>' : '');
       var wr = r.warn ? ' <span class="warn">⚠ ' + esc(r.warn) + '</span>' : '';
       var lb = r.arrow ? name(r.label) + ' →' : labelHtml(r.label);
-      h += '<div class="row"><span class="lb">' + lb + '</span><span class="pl">' + pl + ov + alt + res + wr + '</span></div>';
+      h += '<div class="row"><span class="lb">' + lb + '</span><span class="pl">' + pl + ov + alt + res + wr + '</span>' + hist + '</div>';
     });
     h += '</div>';
   });
@@ -249,19 +257,20 @@ function openMenu(chip, b) {
   menuEl = m;
 }
 // Live: the server streams a version number; when it changes, refetch. Polling if the stream can't be opened.
-var lastV = null, pollTimer = null;
+var lastV = null, lastC = null, pollTimer = null;
 function startLive() {
   var poll = function () { if (!pollTimer) pollTimer = setInterval(function () { if (!document.hidden) load(); }, 20000); };
   if (!window.EventSource) return poll();
   try {
     var es = new EventSource(API + '/api/assignments/events');
-    es.onmessage = function (e) { var v = null; try { v = JSON.parse(e.data).v; } catch (x) {} if (lastV !== null && v !== lastV) load(); lastV = v; };
+    es.onmessage = function (e) { var v = null, c = null; try { var j = JSON.parse(e.data); v = j.v; c = j.c; } catch (x) {} if ((lastV !== null && v !== lastV) || (lastC !== null && c !== lastC)) load(); lastV = v; lastC = c; };
     es.onerror = function () { es.close(); poll(); };
   } catch (e) { poll(); }
 }
 document.addEventListener('visibilitychange', function () { if (!document.hidden && state) load(); });
 // Officer passphrase (shared with the marks tracker's session) unlocks the add-a-healer buttons; the API checks it too.
 var OKEY = null; try { OKEY = sessionStorage.getItem('markskey'); } catch (e) {}
+var showHist = false; try { showHist = sessionStorage.getItem('assignhist') === '1'; } catch (e) {}
 function load() {
   var ex = Object.keys(extra).filter(function (k) { return extra[k]; });
   return fetch(API + '/api/assignments' + (ex.length ? '?extra=' + encodeURIComponent(ex.join(',')) + '&key=' + encodeURIComponent(OKEY || '') : ''))
