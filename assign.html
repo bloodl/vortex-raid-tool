@@ -44,7 +44,33 @@
   .tabs button.z-night.on { color: #dcc4ff; background: #221a30; box-shadow: 0 0 14px #b678f0aa, inset 0 0 8px #b678f044; }
   .tabs .zrow, .tabs .brow { display: flex; flex-wrap: wrap; gap: 0.3rem; flex: 0 0 100%; }
   .tabs .brow { margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #2a2438; }
-  .tabs button.zb { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; padding: 0.4rem 1rem; }
+  .tabs button.zb { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; padding: 0.4rem 1rem;
+                    position: relative; overflow: hidden; isolation: isolate; }
+  .tabs button.zb > span { position: relative; z-index: 2; }
+  /* Selected Black Temple: warglaive fel-fire licking up the button. */
+  .tabs button.zb.z-bt.on::before {
+    content: ""; position: absolute; left: -12%; right: -12%; bottom: -45%; height: 165%; z-index: 1; pointer-events: none;
+    background:
+      radial-gradient(closest-side at 18% 100%, #7dffb4d9, #2fd77a00 72%),
+      radial-gradient(closest-side at 42% 100%, #d4ffe8f2, #2fd77a00 68%),
+      radial-gradient(closest-side at 63% 100%, #7dffb4cc, #2fd77a00 74%),
+      radial-gradient(closest-side at 86% 100%, #b6ffd8d9, #2fd77a00 70%);
+    filter: blur(5px) saturate(1.3);
+    animation: felflame 1.5s ease-in-out infinite alternate;
+  }
+  @keyframes felflame {
+    from { transform: translateY(9%) scale(1, 0.88); opacity: 0.68; }
+    50%  { transform: translateY(2%) scale(1.03, 1.02); opacity: 0.9; }
+    to   { transform: translateY(-5%) scale(1.06, 1.14); opacity: 1; }
+  }
+  .tabs button.z-bt.on { animation: felglow 2.2s ease-in-out infinite alternate; }
+  @keyframes felglow {
+    from { box-shadow: 0 0 12px #2fd77a88, inset 0 0 8px #2fd77a44; }
+    to   { box-shadow: 0 0 22px #7dffb4cc, inset 0 0 14px #2fd77a66; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tabs button.zb.z-bt.on::before, .tabs button.z-bt.on { animation: none; }
+  }
   /* Packed columns, not a grid: short cards (Tanks, Bloodlust) stack under each
      other instead of being stretched to the tallest card in their row. */
   .grid { columns: 3 300px; column-gap: 0.8rem; }
@@ -148,7 +174,7 @@ function render() {
   var inZone = state.bosses.filter(function (x) { return x.zone === b.zone; });
   var h = '<div class="tabs">' + pastBar() +
     '<div class="zrow">' + zones.map(function (z) {
-      return '<button data-zone="' + esc(z) + '" class="zb ' + zoneClass(z) + (z === b.zone ? ' on' : '') + '">' + esc(zoneLabel(z)) + '</button>';
+      return '<button data-zone="' + esc(z) + '" class="zb ' + zoneClass(z) + (z === b.zone ? ' on' : '') + '"><span>' + esc(zoneLabel(z)) + '</span></button>';
     }).join('') + '</div>' +
     (inZone.length > 1 ? '<div class="brow">' + inZone.map(function (x) {
       return '<button data-id="' + x.id + '" class="' + zoneClass(x.zone) + (x.id === b.id ? ' on' : '') + '">' + esc(x.name) + '</button>';
