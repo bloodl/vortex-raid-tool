@@ -123,7 +123,127 @@
   apply();
 })();</script><div class="page">
   <h1>Vortex — Loot History</h1>
-  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/5/2026, 2:57:16 PM · click a column to sort</p>
+  <section id="council" class="council" data-gate="officer" hidden>
+  <h2>⚖️ Council mode</h2>
+  <p class="csub">An item dropped: find it, see who has it wishlisted and what a win does to their standing, award it. The record joins the loot history and the standings rebuild within a minute.</p>
+  <div class="crow"><div class="cq"><input id="c-q" placeholder="Item that dropped…" autocomplete="off"><div id="c-hits" class="hits" hidden></div></div>
+  <select id="c-boss" title="Which boss dropped it"><option value="">boss…</option></select></div>
+  <div id="c-body"></div><div id="c-recent" class="crecent"></div>
+</section>
+<style>
+  .council { background: #1b1726; border: 1px solid #3a3350; border-radius: 12px; padding: 1rem 1.1rem; margin: 0 0 1.4rem; }
+  .council h2 { margin: 0 0 0.2rem; font-size: 1.1rem; } .csub { color: #9d94b3; font-size: 0.85rem; margin: 0 0 0.8rem; }
+  .crow { display: flex; gap: 0.5rem; flex-wrap: wrap; } .cq { position: relative; flex: 1 1 18rem; }
+  .council input, .council select { background: #201c2b; border: 1px solid #332c44; color: #e9e5f2; border-radius: 8px; padding: 0.5rem 0.7rem; font-size: 0.95rem; width: 100%; }
+  .council select { width: auto; min-width: 11rem; }
+  .hits { position: absolute; top: 100%; left: 0; right: 0; z-index: 20; background: #1b1726; border: 1px solid #3a3350; border-radius: 10px; margin-top: 0.2rem; max-height: 18rem; overflow: auto; box-shadow: 0 10px 28px #000a; }
+  .hits div { padding: 0.4rem 0.7rem; cursor: pointer; font-size: 0.9rem; } .hits div:hover { background: #2a2438; } .hits small { color: #9d94b3; margin-left: 0.4rem; }
+  .citem { margin: 0.9rem 0 0.4rem; font-weight: 600; } .citem small { color: #9d94b3; font-weight: 400; margin-left: 0.4rem; }
+  table.ct { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  .ct th { text-align: left; color: #9d94b3; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.3rem 0.4rem; }
+  .ct td { padding: 0.35rem 0.4rem; border-top: 1px solid #221d2e; white-space: nowrap; vertical-align: middle; } .ct td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .ct .mut, .mut { color: #6f6790; }
+  .council button { background: #241f31; border: 1px solid #3a3350; color: #cfc7e2; border-radius: 7px; padding: 0.3rem 0.6rem; font-size: 0.82rem; cursor: pointer; }
+  .council button.aw { border-color: #7fd98c66; color: #a9e8b2; } .council button:hover { background: #2e2740; } .council button:disabled { opacity: 0.5; cursor: default; }
+  .ct select { padding: 0.25rem 0.4rem; font-size: 0.82rem; min-width: 8rem; }
+  .cothers { margin-top: 0.6rem; font-size: 0.85rem; color: #9d94b3; } .cothers summary { cursor: pointer; }
+  .crecent { margin-top: 1rem; font-size: 0.85rem; } .crecent h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #9d94b3; margin: 0.6rem 0 0.3rem; } .crecent div { padding: 0.25rem 0; border-top: 1px solid #221d2e; }
+  .cflash { position: fixed; bottom: 0.8rem; right: 1rem; background: #1b1726; border: 1px solid #3a3350; border-radius: 999px; padding: 0.3rem 0.9rem; font-size: 0.85rem; z-index: 30; }
+</style>
+<script>(function () {
+  "use strict";
+  var API = "https://enr.tail10d5e9.ts.net";
+  var CLASS_COLOR = { Warrior: "#C69B6D", Paladin: "#F48CBA", Hunter: "#AAD372", Rogue: "#FFF468", Priest: "#FFFFFF", Shaman: "#0070DD", Mage: "#3FC7EB", Warlock: "#8788EE", Druid: "#FF7C0A" };
+  var TIERS = [["Best in slot", "Mainspec / BiS"], ["Upgrade", "Minor upgrade"], ["Off Spec", "Off spec"], ["Disenchant", "Free / disenchant"]];
+  var panel = document.getElementById("council"); if (!panel) return;
+  var q = document.getElementById("c-q"), hits = document.getElementById("c-hits"), bossSel = document.getElementById("c-boss"), body = document.getElementById("c-body"), recentEl = document.getElementById("c-recent");
+  var cur = null, timer = null;
+  function key() { try { return sessionStorage.getItem("markskey") || ""; } catch (e) { return ""; } }
+  function by() { try { return sessionStorage.getItem("marksby") || ""; } catch (e) { return ""; } }
+  function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+  function nm(n, c) { var col = CLASS_COLOR[c]; return col ? '<span style="color:' + col + '">' + esc(n) + '</span>' : esc(n); }
+  function flash(t) { var el = document.createElement("div"); el.className = "cflash"; el.textContent = t; document.body.appendChild(el); setTimeout(function () { el.remove(); }, 2600); }
+  function api(path, post) {
+    var r = post
+      ? fetch(API + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ key: key(), by: by() }, post)) })
+      : fetch(API + path + (path.indexOf("?") >= 0 ? "&" : "?") + "key=" + encodeURIComponent(key()));
+    return r.then(function (x) { return x.json().then(function (j) { if (!x.ok) throw new Error(j.error || ("HTTP " + x.status)); return j; }); });
+  }
+  q.addEventListener("input", function () {
+    clearTimeout(timer);
+    var v = q.value.trim();
+    if (v.length < 2) { hits.hidden = true; return; }
+    timer = setTimeout(function () {
+      api("/api/council/search?q=" + encodeURIComponent(v)).then(function (j) {
+        hits.innerHTML = (j.results || []).map(function (it) { return '<div data-id="' + it.id + '">' + esc(it.name) + '<small>' + esc(it.slot || "") + (it.q ? " · " + esc(it.q) : "") + '</small></div>'; }).join("") || '<div class="mut">nothing equippable matches</div>';
+        hits.hidden = false;
+      }).catch(function (e) { flash(e.message); });
+    }, 220);
+  });
+  hits.addEventListener("click", function (e) { var d = e.target.closest("[data-id]"); if (!d) return; hits.hidden = true; load(Number(d.dataset.id)); });
+  document.addEventListener("click", function (e) { if (!hits.contains(e.target) && e.target !== q) hits.hidden = true; });
+  function load(id) {
+    body.innerHTML = '<p class="csub">Looking up claims…</p>';
+    api("/api/council/claims?id=" + id).then(function (j) { cur = j; q.value = j.item.name; render(); })
+      .catch(function (e) { body.innerHTML = '<p class="csub">' + esc(e.message) + '</p>'; });
+  }
+  function tierSel(i) { return '<select data-tier="' + i + '">' + TIERS.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join("") + '</select>'; }
+  function render() {
+    var j = cur; if (!j) return;
+    if (bossSel.options.length <= 1) bossSel.innerHTML = '<option value="">boss…</option>' + (j.bosses || []).map(function (b) { return '<option>' + esc(b) + '</option>'; }).join("");
+    var h = '<div class="citem">' + esc(j.item.name) + '<small>' + esc(j.item.slot || "") + (j.item.q ? " · " + esc(j.item.q) : "") + (j.standingsDate ? " · standings " + esc(j.standingsDate) : "") + (j.locked ? " · 🔒 phase-locked" : "") + '</small></div>';
+    if (!j.rows.length) h += '<p class="csub">Nobody has this wishlisted.</p>';
+    else {
+      h += '<table class="ct"><thead><tr><th>#</th><th>Raider</th><th>Priority</th><th>Wishlist</th><th>Debt</th><th>If won</th><th>Last win</th><th></th></tr></thead><tbody>';
+      j.rows.forEach(function (r, i) {
+        var ifw = r.ifWon ? "−" + r.ifWon.pts + " → " + r.ifWon.prio + ' <span class="mut">#' + r.ifWon.rank + '</span>' : "—";
+        h += '<tr><td class="num">' + (i + 1) + '</td><td>' + nm(r.main, r.cls) + (r.note ? ' <span class="mut">(' + esc(r.note) + ')</span>' : "") + '</td>' +
+          '<td class="num">' + (r.prio === null ? "—" : r.prio.toFixed(1)) + '</td><td>#' + r.wishRank + " of " + r.wishOf + (r.via ? ' <span class="mut">via ' + esc(r.via) + '</span>' : "") + '</td>' +
+          '<td class="num">' + (r.debt == null ? "—" : r.debt.toFixed(1)) + '</td><td>' + ifw + '</td><td class="mut">' + esc(r.lastWin || "never") + '</td>' +
+          '<td>' + tierSel(i) + ' <button class="aw" data-award="' + esc(r.main) + '" data-i="' + i + '">Award</button></td></tr>';
+      });
+      h += '</tbody></table>';
+    }
+    if (j.others && j.others.length) {
+      h += '<details class="cothers"><summary>Everyone else on the board (' + j.others.length + ') — not wishlisting this</summary><table class="ct"><tbody>';
+      j.others.forEach(function (r, i) {
+        h += '<tr><td>' + nm(r.main, r.cls) + '</td><td class="num">' + r.prio.toFixed(1) + '</td><td class="mut">debt ' + (r.debt == null ? "—" : r.debt.toFixed(1)) + ' · last win ' + esc(r.lastWin || "never") + '</td>' +
+          '<td>' + tierSel("o" + i) + ' <button data-award="' + esc(r.main) + '" data-i="o' + i + '">Award</button></td></tr>';
+      });
+      h += '</tbody></table></details>';
+    }
+    body.innerHTML = h;
+    body.querySelectorAll("button[data-award]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var tier = body.querySelector('select[data-tier="' + b.dataset.i + '"]').value;
+        var boss = bossSel.value;
+        if (!confirm("Award " + j.item.name + " to " + b.dataset.award + " as " + tier + (boss ? " (" + boss + ")" : "") + "?")) return;
+        b.disabled = true;
+        api("/api/council/award", { itemId: j.item.id, player: b.dataset.award, response: tier, boss: boss })
+          .then(function () { flash("Awarded — standings rebuilding"); recent(); load(j.item.id); })
+          .catch(function (e) { b.disabled = false; flash(e.message); });
+      });
+    });
+  }
+  function recent() {
+    api("/api/council/recent").then(function (j) {
+      if (!j.awards.length) { recentEl.innerHTML = ""; return; }
+      recentEl.innerHTML = '<h3>Awarded from this page</h3>' + j.awards.map(function (a) {
+        return '<div>' + esc(a.date) + " " + esc(String(a.time).slice(0, 5)) + ' · <b>' + esc(a.player) + '</b> — ' + esc(a.item) + ' <span class="mut">' + esc(a.response) + (a.boss ? " · " + esc(a.boss) : "") + " · by " + esc(a.by) + '</span> <button data-undo="' + esc(a.id) + '">undo</button></div>';
+      }).join("");
+      recentEl.querySelectorAll("button[data-undo]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          if (!confirm("Remove this award?")) return;
+          api("/api/council/undo", { id: b.dataset.undo }).then(function () { flash("Removed — standings rebuilding"); recent(); if (cur) load(cur.item.id); }).catch(function (e) { flash(e.message); });
+        });
+      });
+    }).catch(function () {});
+  }
+  if (API && key()) recent();
+  var loginBtn = document.getElementById("tn-login");
+  if (loginBtn) loginBtn.addEventListener("click", function () { setTimeout(function () { if (key()) recent(); }, 1500); });
+})();</script>
+  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/5/2026, 4:33:58 PM · click a column to sort</p>
   <div class="bar">
     <input id="q" type="text" placeholder="filter: player, item, boss, selection…">
     <label><input id="showfree" type="checkbox"> show disenchants &amp; free rolls</label>
