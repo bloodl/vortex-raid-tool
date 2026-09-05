@@ -330,7 +330,7 @@ function render() {
       var ov = r.override ? ' <span class="alt" title="changed by an officer tonight">✎ ' + esc(r.override.by || 'officer') + (r.override.via === 'swap' ? ' (swap)' : '') + '</span>' : '';
       var hist = '';
       var alt = ''; // a decision, not a guessing game — alternatives stay in the data, not on the page
-      var res = (r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '') + (r.flex ? ' <span class="alt">flex: ' + esc(r.flex) + '</span>' : '') + (r.backup ? ' <span class="alt">· backup ' + name(r.backup) + '</span>' : '');
+      var res = (r.resist ? ' <span class="alt">' + esc(r.resist) + '</span>' : '') + (r.flex ? ' <span class="alt">flex: ' + esc(r.flex) + '</span>' : '') + (r.tag ? ' <span class="alt">' + esc(r.tag) + '</span>' : '') + (r.backup ? ' <span class="alt">· backup ' + name(r.backup) + '</span>' : '');
       var wr = r.warn ? ' <span class="warn">⚠ ' + esc(r.warn) + '</span>' : '';
       var lb = r.arrow ? name(r.label) + ' →' : labelHtml(r.label);
       h += '<div class="row"><span class="lb">' + lb + '</span><span class="pl">' + pl + ov + alt + res + wr + '</span>' + hist + '</div>';
