@@ -93,7 +93,7 @@
     wrap.className = "tn-dlg";
     wrap.innerHTML = '<div class="box"><h3>🔑 Log in</h3><p>Officer passphrase or guildmaster password — it opens every page you have access to.</p>' +
       '<label>Passphrase</label><input id="tn-p" type="password" autocomplete="current-password">' +
-      '<label>Your name <span style="opacity:.7">(logged next to changes you make)</span></label><input id="tn-n" maxlength="24">' +
+      '<label>Your name <span style="opacity:.7">— shown next to every change you make</span></label><input id="tn-n" maxlength="24" placeholder="e.g. Erik">' +
       '<div class="err" id="tn-e"></div><div class="row"><button id="tn-x">Cancel</button><button class="go" id="tn-ok">Log in</button></div></div>';
     document.body.appendChild(wrap);
     var pass = wrap.querySelector("#tn-p"), who = wrap.querySelector("#tn-n"), err = wrap.querySelector("#tn-e");
@@ -102,6 +102,7 @@
     var close = function () { wrap.remove(); };
     var go = function () {
       if (!API) { err.textContent = "The guild PC is not reachable from here yet."; return; }
+      if (!who.value.trim()) { err.textContent = "Add your name — hand-outs and edits are logged with it."; who.focus(); return; }
       err.textContent = "Checking…";
       verify(pass.value, who.value.trim(), function (ok) {
         if (ok) { close(); if (location.hash) location.reload(); }
