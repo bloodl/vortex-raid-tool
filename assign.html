@@ -272,7 +272,10 @@ if (window.ResizeObserver) {
 }
 
 function render() {
-  var b = state.bosses.find(function (x) { return x.id === current; }) || state.bosses[0];
+  // Hidden zones (being prepared) show only to logged-in officers.
+  var shown = state.bosses.filter(function (x) { return !x.hidden || OKEY; });
+  if (!shown.length) { app.innerHTML = '<div class="err">Nothing published yet.</div>'; return; }
+  var b = shown.find(function (x) { return x.id === current; }) || shown[0];
   if (!b) { app.innerHTML = '<div class="err">No boss templates.</div>'; return; }
   current = b.id;
   var roles = { tank: 0, healer: 0, melee: 0, ranged: 0 };
@@ -297,9 +300,10 @@ function render() {
   // Two rows: the zones (All night · Black Temple · Mount Hyjal) on top, and only the
   // chosen zone's bosses underneath — switching zone swaps the whole boss row.
   var zones = [];
-  state.bosses.forEach(function (x) { if (zones.indexOf(x.zone) < 0) zones.push(x.zone); });
-  var zoneLabel = function (z) { return /hyjal/i.test(z) ? 'Mount Hyjal' : /raid-wide/i.test(z) ? 'All night' : z; };
-  var inZone = state.bosses.filter(function (x) { return x.zone === b.zone; });
+  shown.forEach(function (x) { if (zones.indexOf(x.zone) < 0) zones.push(x.zone); });
+  var hiddenZone = function (z) { return shown.some(function (x) { return x.zone === z && x.hidden; }); };
+  var zoneLabel = function (z) { return (/hyjal/i.test(z) ? 'Mount Hyjal' : /raid-wide/i.test(z) ? 'All night' : z) + (hiddenZone(z) ? ' · officers only' : ''); };
+  var inZone = shown.filter(function (x) { return x.zone === b.zone; });
   var h = '<div class="tabs">' + pastBar() +
     '<div class="zrow">' + zones.map(function (z) {
       return '<button data-zone="' + esc(z) + '" class="zb ' + zoneClass(z) + (z === b.zone ? ' on' : '') + '"><span>' + esc(zoneLabel(z)) + '</span></button>';
@@ -378,7 +382,7 @@ function render() {
   app.querySelectorAll('.tabs button[data-zone]').forEach(function (btn) { btn.addEventListener('click', function () {
     var z = btn.dataset.zone, remembered = null;
     try { remembered = sessionStorage.getItem('assignboss:' + z); } catch (e) {}
-    var pick = state.bosses.filter(function (x) { return x.zone === z && x.id === remembered; })[0] || state.bosses.filter(function (x) { return x.zone === z; })[0];
+    var pick = shown.filter(function (x) { return x.zone === z && x.id === remembered; })[0] || shown.filter(function (x) { return x.zone === z; })[0];
     if (!pick) return;
     current = pick.id; render(); try { sessionStorage.setItem('assignboss', current); } catch (e) {}
   }); });
