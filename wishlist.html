@@ -91,9 +91,14 @@
   function verify(pass, who, done) {
     Promise.all([check("/api/marks", pass), check("/api/settings", pass)]).then(function (r) {
       if (r[0]) store("officer", pass, who);
-      if (r[1]) store("guildmaster", pass, who);
-      apply();
-      done(r[0] || r[1]);
+      if (!r[1]) { apply(); done(r[0]); return; }
+      store("guildmaster", pass, who);
+      // Guildmaster includes officer: fetch the officer passphrase so the encrypted
+      // pages and the trackers open too.
+      fetch(API + "/api/settings/unlock?key=" + encodeURIComponent(pass)).then(function (u) { return u.ok ? u.json() : {}; })
+        .then(function (j) { if (j && j.officerKey) store("officer", j.officerKey, who); })
+        .catch(function () {})
+        .then(function () { apply(); done(true); });
     });
   }
   function dialog() {

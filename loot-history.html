@@ -83,9 +83,14 @@
   function verify(pass, who, done) {
     Promise.all([check("/api/marks", pass), check("/api/settings", pass)]).then(function (r) {
       if (r[0]) store("officer", pass, who);
-      if (r[1]) store("guildmaster", pass, who);
-      apply();
-      done(r[0] || r[1]);
+      if (!r[1]) { apply(); done(r[0]); return; }
+      store("guildmaster", pass, who);
+      // Guildmaster includes officer: fetch the officer passphrase so the encrypted
+      // pages and the trackers open too.
+      fetch(API + "/api/settings/unlock?key=" + encodeURIComponent(pass)).then(function (u) { return u.ok ? u.json() : {}; })
+        .then(function (j) { if (j && j.officerKey) store("officer", j.officerKey, who); })
+        .catch(function () {})
+        .then(function () { apply(); done(true); });
     });
   }
   function dialog() {
@@ -117,7 +122,7 @@
   apply();
 })();</script><div class="page">
   <h1>Vortex — Loot History</h1>
-  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/4/2026, 11:45:07 PM · click a column to sort</p>
+  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/5/2026, 2:44:22 PM · click a column to sort</p>
   <div class="bar">
     <input id="q" type="text" placeholder="filter: player, item, boss, selection…">
     <label><input id="showfree" type="checkbox"> show disenchants &amp; free rolls</label>
