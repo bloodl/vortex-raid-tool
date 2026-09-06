@@ -48,6 +48,8 @@
 <script>(function () {
   "use strict";
   var API = "https://enr.tail10d5e9.ts.net";
+  var FEATURES = {"marks":true,"council":true};
+  document.querySelectorAll("[data-feature]").forEach(function (el) { if (FEATURES[el.getAttribute("data-feature")] === false) el.remove(); });
   var LEVELS = ["officer", "guildmaster"];
   var btn = document.getElementById("tn-login");
   function levels() {
@@ -243,7 +245,91 @@
   var loginBtn = document.getElementById("tn-login");
   if (loginBtn) loginBtn.addEventListener("click", function () { setTimeout(function () { if (key()) recent(); }, 1500); });
 })();</script>
-  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/6/2026, 1:42:55 AM · click a column to sort</p>
+  <section id="lootimport" class="council limport" data-gate="officer" hidden>
+  <h2>📥 Import loot history</h2>
+  <p class="csub">Paste an export from Gargul, ThatsMyBIS, CEPGP / EPGP, a DKP addon, RCLootCouncil or a spreadsheet — or upload the file. The columns are guessed; check them, then import. Imports sit next to the addon data and can be removed again.</p>
+  <div class="crow"><textarea id="li-text" rows="6" placeholder="Paste the export here (CSV, tab- or semicolon-separated, with or without a header row, or a JSON array)…"></textarea></div>
+  <div class="crow"><input type="file" id="li-file" accept=".csv,.tsv,.txt,.json"><button id="li-preview">Preview</button></div>
+  <div id="li-body"></div>
+  <div id="li-list" class="crecent"></div>
+</section>
+<style>
+  .limport textarea { width: 100%; background: #201c2b; border: 1px solid #332c44; color: #e9e5f2; border-radius: 8px; padding: 0.5rem 0.7rem; font: 12.5px/1.45 Consolas, ui-monospace, monospace; }
+  .limport input[type=file] { width: auto; }
+  .limport .map { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.4rem 0.8rem; margin: 0.6rem 0; }
+  .limport .map label { font-size: 0.78rem; color: #9d94b3; display: block; }
+  .limport .map select { width: 100%; }
+  .limport .opts { display: flex; flex-wrap: wrap; gap: 0.6rem 1rem; align-items: end; margin: 0.6rem 0; }
+  .limport .opts label { font-size: 0.78rem; color: #9d94b3; display: block; }
+  .limport .opts input { width: 10rem; }
+  .limport table.ct td { white-space: nowrap; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; }
+  .limport .ok { color: #a9e8b2; } .limport .bad { color: #ffb8b8; }
+</style>
+<script>(function () {
+  "use strict";
+  var API = "https://enr.tail10d5e9.ts.net";
+  var panel = document.getElementById("lootimport"); if (!panel) return;
+  var text = document.getElementById("li-text"), file = document.getElementById("li-file"), body = document.getElementById("li-body"), list = document.getElementById("li-list");
+  var FIELDS = [["player", "Player"], ["item", "Item (name or link)"], ["itemId", "Item id"], ["date", "Date"], ["time", "Time"], ["response", "Response / roll type"], ["boss", "Boss"], ["instance", "Instance / raid"], ["note", "Note"], ["cost", "Cost (DKP / GP / gold)"]];
+  var TIERS = [["Best in slot", "Mainspec / BiS"], ["Upgrade", "Minor upgrade"], ["Off Spec", "Off spec"], ["Disenchant", "Free / disenchant"]];
+  function key() { try { return sessionStorage.getItem("markskey") || ""; } catch (e) { return ""; } }
+  function by() { try { return sessionStorage.getItem("marksby") || ""; } catch (e) { return ""; } }
+  function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+  function flash(t) { var el = document.createElement("div"); el.className = "cflash"; el.textContent = t; document.body.appendChild(el); setTimeout(function () { el.remove(); }, 3000); }
+  function api(path, post) {
+    var r = post
+      ? fetch(API + path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.assign({ key: key(), by: by() }, post)) })
+      : fetch(API + path + "?key=" + encodeURIComponent(key()));
+    return r.then(function (x) { return x.json().then(function (j) { if (!x.ok) throw new Error(j.error || ("HTTP " + x.status)); return j; }); });
+  }
+  file.addEventListener("change", function () {
+    var f = file.files && file.files[0]; if (!f) return;
+    var rd = new FileReader(); rd.onload = function () { text.value = String(rd.result || ""); preview(); }; rd.readAsText(f);
+  });
+  document.getElementById("li-preview").addEventListener("click", preview);
+  var cur = null;
+  function preview() {
+    var t = text.value.trim(); if (!t) { flash("Paste something first"); return; }
+    body.innerHTML = '<p class="csub">Reading…</p>';
+    api("/api/loot/preview", { text: t }).then(function (j) { cur = j; render(); }).catch(function (e) { body.innerHTML = '<p class="csub bad">' + esc(e.message) + '</p>'; });
+  }
+  function render() {
+    var j = cur, hs = j.headers;
+    var opt = function (sel) { return '<option value="">—</option>' + hs.map(function (h, i) { var sample = (j.sample[0] || [])[i] || ""; return '<option value="' + i + '"' + (sel === i ? ' selected' : '') + '>' + esc(h) + (sample ? ' · e.g. ' + esc(String(sample).slice(0, 28)) : '') + '</option>'; }).join(""); };
+    var h = '<div class="citem">' + j.rows + ' rows · ' + hs.length + ' columns · ' + (j.delimiter === "json" ? "JSON" : j.delimiter === "\t" ? "tab-separated" : "separated by " + esc(j.delimiter)) + (j.header ? " · header row" : " · no header row") + ' · looks like <b>' + esc(j.source) + '</b></div>';
+    h += '<div class="tblwrap" style="overflow-x:auto"><table class="ct"><thead><tr>' + hs.map(function (x) { return '<th>' + esc(x) + '</th>'; }).join("") + '</tr></thead><tbody>' +
+      j.sample.map(function (r) { return '<tr>' + hs.map(function (_, i) { return '<td title="' + esc(r[i] || "") + '">' + esc(r[i] || "") + '</td>'; }).join("") + '</tr>'; }).join("") + '</tbody></table></div>';
+    h += '<div class="map">' + FIELDS.map(function (f) { return '<div><label>' + esc(f[1]) + '</label><select data-f="' + f[0] + '">' + opt(j.mapping[f[0]]) + '</select></div>'; }).join("") + '</div>';
+    h += '<div class="opts"><div><label>Source label</label><input id="li-source" value="' + esc(j.source) + '" maxlength="24"></div>' +
+      '<div><label>Dates like 03/04/26 are</label><select id="li-order"><option value="auto">auto (day first when unclear)</option><option value="dmy">day / month / year</option><option value="mdy">month / day / year</option></select></div>' +
+      '<div><label>Response when the export has none</label><select id="li-resp">' + TIERS.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join("") + '</select></div>' +
+      '<div><button class="aw" id="li-go">Import</button></div></div><div id="li-result"></div>';
+    body.innerHTML = h;
+    document.getElementById("li-go").addEventListener("click", function () {
+      var mapping = {};
+      body.querySelectorAll("select[data-f]").forEach(function (s) { if (s.value !== "") mapping[s.dataset.f] = Number(s.value); });
+      if (mapping.player === undefined || mapping.date === undefined || (mapping.item === undefined && mapping.itemId === undefined)) { flash("Map at least player, date and item"); return; }
+      var btn = this; btn.disabled = true;
+      api("/api/loot/import", { text: text.value, mapping: mapping, source: document.getElementById("li-source").value.trim() || "csv", order: document.getElementById("li-order").value, defaultResponse: document.getElementById("li-resp").value })
+        .then(function (r) {
+          document.getElementById("li-result").innerHTML = '<p class="csub"><span class="ok">Imported ' + r.count + ' award' + (r.count === 1 ? "" : "s") + '</span>' + (r.skipped.length ? ' · skipped ' + r.skipped.length + ' row' + (r.skipped.length === 1 ? "" : "s") + ' (' + esc(r.skipped.slice(0, 5).map(function (s) { return "row " + s.row + ": " + s.why; }).join(", ")) + (r.skipped.length > 5 ? ", …" : "") + ')' : '') + (r.duplicates ? ' · ' + r.duplicates + ' duplicate' + (r.duplicates === 1 ? "" : "s") + ' dropped' : '') + ' — standings rebuilding, the loot history page refreshes in a minute.</p>';
+          btn.disabled = false; recent();
+        })
+        .catch(function (e) { btn.disabled = false; flash(e.message); });
+    });
+  }
+  function recent() {
+    api("/api/loot/imports").then(function (j) {
+      if (!j.imports.length) { list.innerHTML = ""; return; }
+      list.innerHTML = '<h3>Imports</h3>' + j.imports.map(function (r) { return '<div>' + esc(String(r.at).slice(0, 16).replace("T", " ")) + ' · <b>' + esc(r.source) + '</b> · ' + r.count + ' awards' + (r.from ? ' (' + esc(r.from) + ' → ' + esc(r.to) + ')' : '') + ' · by ' + esc(r.by) + ' <button data-undo="' + esc(r.file) + '">remove</button></div>'; }).join("");
+      list.querySelectorAll("button[data-undo]").forEach(function (b) { b.addEventListener("click", function () { if (!confirm("Remove this import and its awards from the history?")) return; api("/api/loot/undo", { file: b.dataset.undo }).then(function () { flash("Removed — standings rebuilding"); recent(); }).catch(function (e) { flash(e.message); }); }); });
+    }).catch(function () {});
+  }
+  if (API && key()) recent();
+  var loginBtn = document.getElementById("tn-login");
+  if (loginBtn) loginBtn.addEventListener("click", function () { setTimeout(function () { if (key()) recent(); }, 1500); });
+})();</script>
+  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/6/2026, 2:00:08 AM · click a column to sort</p>
   <div class="bar">
     <input id="q" type="text" placeholder="filter: player, item, boss, selection…">
     <label><input id="showfree" type="checkbox"> show disenchants &amp; free rolls</label>
