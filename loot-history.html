@@ -51,7 +51,7 @@
 <script>(function () {
   "use strict";
   var API = "https://enr.tail10d5e9.ts.net";
-  var DISCORD = false;
+  var DISCORD = true;
   var FEATURES = {"marks":true,"council":true};
   document.querySelectorAll("[data-feature]").forEach(function (el) { if (FEATURES[el.getAttribute("data-feature")] === false) el.remove(); });
   var LEVELS = ["officer", "guildmaster"];
@@ -363,7 +363,7 @@
   var loginBtn = document.getElementById("tn-login");
   if (loginBtn) loginBtn.addEventListener("click", function () { setTimeout(function () { if (key()) recent(); }, 1500); });
 })();</script>
-  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/6/2026, 3:45:15 AM · click a column to sort</p>
+  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/6/2026, 3:49:18 AM · click a column to sort</p>
   <div class="bar">
     <input id="q" type="text" placeholder="filter: player, item, boss, selection…">
     <label><input id="showfree" type="checkbox"> show disenchants &amp; free rolls</label>

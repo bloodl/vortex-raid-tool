@@ -155,7 +155,7 @@
 <script>(function () {
   "use strict";
   var API = "https://enr.tail10d5e9.ts.net";
-  var DISCORD = false;
+  var DISCORD = true;
   var FEATURES = {"marks":true,"council":true};
   document.querySelectorAll("[data-feature]").forEach(function (el) { if (FEATURES[el.getAttribute("data-feature")] === false) el.remove(); });
   var LEVELS = ["officer", "guildmaster"];
