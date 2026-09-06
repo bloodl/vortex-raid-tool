@@ -323,6 +323,7 @@ function section(sec) {
   if (sec.widget === "sets") return sets(sec, main);
   if (sec.widget === "bosses") return bosses(sec, main);
   if (sec.widget === "raw") return raw(sec, main);
+  if (sec.widget === "uploader") return uploader(sec, main);
   var doc = state.files[sec.file] || {};
   var h = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p>';
   if (sec.id === "raidroles") h += '<div class="names">Roster: ' + esc(state.meta.rosterNames.join(", ")) + '</div>';
@@ -408,6 +409,24 @@ function roster(sec, main) {
     api("/api/settings", { file: "roster", doc: doc }).then(function (j) { state.files.roster = j.doc; state.meta.rosterNames = j.doc.filter(function (r) { return !r.inactive; }).map(function (r) { return r.main; }).sort(); flash("Roster saved — " + j.doc.length + " raiders"); btn.disabled = false; })
       .catch(function (e) { btn.disabled = false; if (e.message !== "auth") flash(e.message, true); });
   });
+}
+
+// ---------- loot master uploader: download + upload code ----------
+function uploader(sec, main) {
+  var hub = (API || "").replace(new RegExp("/g/[a-z0-9-]+$"), "");
+  main.innerHTML = '<div class="card"><h2>' + esc(sec.title) + '</h2><p class="sub">' + esc(sec.blurb) + '</p>' +
+    '<ol class="sub"><li>On the PC of the loot master, download <a href="' + hub + '/downloads/vrt-uploader.exe"><b>vrt-uploader.exe</b></a> (Windows) and run it. Windows may ask once whether to run an unknown app.</li>' +
+    '<li>Paste the upload code below when it asks. It finds the RCLootCouncil file in the World of Warcraft folder by itself.</li>' +
+    '<li>It uploads the history and keeps watching. Say yes to "start with Windows" and it runs after every raid without anyone remembering.</li></ol>' +
+    '<div id="upc" class="sub">Loading…</div><div class="bar"><button id="uprot">Generate a new code</button><span class="sub" style="margin-left:.8rem">The old code stops working; the loot master pastes the new one once (run the uploader with --reset).</span></div>' +
+    '<p class="sub">Not on Windows? <a href="' + hub + '/downloads/vrt-uploader.cjs">vrt-uploader.cjs</a> does the same with Node installed: <code>node vrt-uploader.cjs</code>.</p></div>';
+  function show() {
+    api("/api/settings/upload-token").then(function (j) {
+      document.getElementById("upc").innerHTML = '<label>Upload code</label><input class="wide" readonly value="' + esc(j.code) + '" onclick="this.select()" style="width:100%;font-family:Consolas,ui-monospace,monospace;font-size:.8rem"> <span class="sub">created ' + esc(String(j.createdAt || "").slice(0, 10)) + (j.by ? " by " + esc(j.by) : "") + '</span>';
+    }).catch(function (e) { if (e.message !== "auth") flash(e.message, true); });
+  }
+  document.getElementById("uprot").addEventListener("click", function () { if (!confirm("Generate a new upload code? The old one stops working.")) return; api("/api/settings/upload-token/rotate", {}).then(function () { flash("New upload code"); show(); }).catch(function (e) { if (e.message !== "auth") flash(e.message, true); }); });
+  show();
 }
 
 // ---------- resist sets table ----------
