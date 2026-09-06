@@ -44,10 +44,14 @@
   .tn-dlg button { border-radius: 8px; padding: 0.45rem 0.9rem; font-size: 0.9rem; cursor: pointer; border: 1px solid #3a3350; background: #241f31; color: #cfc7e2; }
   .tn-dlg button.go { border-color: #7fd98c66; color: #a9e8b2; }
   .tn-dlg .err { color: #ffb8b8; font-size: 0.85rem; min-height: 1.2em; margin-top: 0.5rem; }
+  .tn-dlg button.dc { width: 100%; background: #5865F2; border-color: #5865F2; color: #fff; font-weight: 600; padding: 0.6rem; }
+  .tn-dlg button.dc:hover { background: #4752c4; }
+  .tn-dlg .or { text-align: center; color: #6f668a; font-size: 0.8rem; margin: 0.8rem 0 0.2rem; }
 </style><nav class="topnav"><img class="tn-logo" src="https://bloodl.github.io/vortex-raid-tool/icon.png" alt=""><a href="https://bloodl.github.io/vortex-raid-tool/">Home</a><a href="https://bloodl.github.io/vortex-raid-tool/rules.html">Rules</a><a href="https://bloodl.github.io/vortex-raid-tool/loot-history.html" class="on">Loot History</a><a href="https://bloodl.github.io/vortex-raid-tool/wishlist.html">Wishlist</a><a href="https://bloodl.github.io/vortex-raid-tool/assign.html">Assignments</a><a href="https://bloodl.github.io/vortex-raid-tool/api.html">Commands</a><a href="https://bloodl.github.io/vortex-raid-tool/dashboard.html" data-gate="officer" hidden>Standings 🔒</a><a href="https://bloodl.github.io/vortex-raid-tool/officers.html" data-gate="officer" hidden>Officers 🔒</a><a href="https://bloodl.github.io/vortex-raid-tool/marks.html" data-gate="officer" hidden>Marks 🔒</a><a href="https://bloodl.github.io/vortex-raid-tool/settings.html" data-gate="guildmaster" hidden>Settings 🔒</a><a class="tn-login" id="tn-login">🔑 Log in</a></nav>
 <script>(function () {
   "use strict";
   var API = "https://enr.tail10d5e9.ts.net";
+  var DISCORD = false;
   var FEATURES = {"marks":true,"council":true};
   document.querySelectorAll("[data-feature]").forEach(function (el) { if (FEATURES[el.getAttribute("data-feature")] === false) el.remove(); });
   var LEVELS = ["officer", "guildmaster"];
@@ -60,8 +64,28 @@
     var els = document.querySelectorAll("[data-gate]");
     for (var i = 0; i < els.length; i++) els[i].hidden = have.indexOf(els[i].getAttribute("data-gate")) < 0;
     if (!btn) return;
-    btn.textContent = have.length ? "🔓 " + (have.indexOf("guildmaster") >= 0 ? "Guildmaster" : "Officer") + " · sign out" : "🔑 Log in";
+    var who = ""; try { who = sessionStorage.getItem("vrtSession") ? (sessionStorage.getItem("marksby") || "") : ""; } catch (e) {}
+    btn.textContent = have.length ? "🔓 " + (who || (have.indexOf("guildmaster") >= 0 ? "Guildmaster" : have.indexOf("officer") >= 0 ? "Officer" : "Member")) + " · sign out" : "🔑 Log in";
   }
+  // Back from Discord: #auth=<session> — ask the bot who this is, fill the same slots the
+  // passphrase login fills (session token where a key goes, Discord name as the actor,
+  // the officer passphrase for the encrypted pages), then reload without the hash.
+  function fromDiscord(token) {
+    fetch(API + "/api/auth/session?key=" + encodeURIComponent(token)).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      history.replaceState(null, "", location.pathname + location.search);
+      if (!j) { alert("Discord login didn't stick — try again."); return; }
+      try {
+        sessionStorage.setItem("vrtSession", token);
+        sessionStorage.setItem("vortexAuth", (j.levels || []).join(","));
+        sessionStorage.setItem("marksby", j.user.name); sessionStorage.setItem("gmby", j.user.name);
+        if ((j.levels || []).indexOf("officer") >= 0) { sessionStorage.setItem("markskey", token); if (j.officerKey) sessionStorage.setItem("vortexOfficerKey", j.officerKey); }
+        if ((j.levels || []).indexOf("guildmaster") >= 0) sessionStorage.setItem("gmkey", token);
+      } catch (e) {}
+      location.reload();
+    }).catch(function () { alert("Could not reach the guild bot to finish the login."); });
+  }
+  var auth = location.hash.match(/(?:^#|&)auth=([0-9a-f]{64})/);
+  if (auth && API) { fromDiscord(auth[1]); return; }
   function store(level, pass, who) {
     var have = levels();
     if (have.indexOf(level) < 0) have.push(level);
@@ -73,7 +97,9 @@
     } catch (e) {}
   }
   function signOut() {
-    var keys = ["vortexAuth", "markskey", "vortexOfficerKey", "gmkey", "marksby", "gmby"];
+    var keys = ["vortexAuth", "markskey", "vortexOfficerKey", "gmkey", "marksby", "gmby", "vrtSession"];
+    var sess = null; try { sess = sessionStorage.getItem("vrtSession"); } catch (e) {}
+    if (sess && API) fetch(API + "/api/auth/logout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: sess }) }).catch(function () {});
     try { for (var i = 0; i < keys.length; i++) sessionStorage.removeItem(keys[i]); } catch (e) {}
     apply();
   }
@@ -98,7 +124,8 @@
   function dialog() {
     var wrap = document.createElement("div");
     wrap.className = "tn-dlg";
-    wrap.innerHTML = '<div class="box"><h3>🔑 Log in</h3><p>Officer passphrase or guildmaster password — it opens every page you have access to.</p>' +
+    wrap.innerHTML = '<div class="box"><h3>🔑 Log in</h3>' +
+      (DISCORD ? '<button class="dc" id="tn-dc">Log in with Discord</button><div class="or">or with a passphrase</div>' : '<p>Officer passphrase or guildmaster password — it opens every page you have access to.</p>') +
       '<label>Passphrase</label><input id="tn-p" type="password" autocomplete="current-password">' +
       '<label>Your name <span style="opacity:.7">— shown next to every change you make</span></label><input id="tn-n" maxlength="24" placeholder="e.g. Erik">' +
       '<div class="err" id="tn-e"></div><div class="row"><button id="tn-x">Cancel</button><button class="go" id="tn-ok">Log in</button></div></div>';
@@ -117,6 +144,8 @@
       });
     };
     wrap.querySelector("#tn-ok").addEventListener("click", go);
+    var dc = wrap.querySelector("#tn-dc");
+    if (dc) dc.addEventListener("click", function () { location.href = API + "/auth/login?return=" + encodeURIComponent(location.href.split("#")[0]); });
     wrap.querySelector("#tn-x").addEventListener("click", close);
     wrap.addEventListener("click", function (e) { if (e.target === wrap) close(); });
     wrap.addEventListener("keydown", function (e) { if (e.key === "Enter") go(); if (e.key === "Escape") close(); });
@@ -334,7 +363,7 @@
   var loginBtn = document.getElementById("tn-login");
   if (loginBtn) loginBtn.addEventListener("click", function () { setTimeout(function () { if (key()) recent(); }, 1500); });
 })();</script>
-  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/6/2026, 3:06:55 AM · click a column to sort</p>
+  <p class="sub">Every council award, straight from the same records that price loot debt · generated 9/6/2026, 3:45:15 AM · click a column to sort</p>
   <div class="bar">
     <input id="q" type="text" placeholder="filter: player, item, boss, selection…">
     <label><input id="showfree" type="checkbox"> show disenchants &amp; free rolls</label>
