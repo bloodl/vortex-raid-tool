@@ -16,8 +16,10 @@
   code { font-family: Consolas, ui-monospace, monospace; font-size: 0.86em; background: #241f31; border: 1px solid #332c44; border-radius: 5px; padding: 0.08em 0.4em; }
   a { color: #b678f0; }
   .chip { display: inline-block; border: 1px solid #3a3350; border-radius: 999px; padding: 0.05rem 0.6rem; font-size: 0.75rem; color: #b8aed3; margin-left: 0.4rem; vertical-align: 2px; }
+  .lockchip { color: #ffd479; border-color: #5a4a2a; }
   .lock { color: #ffd479; }
   .tablewrap { overflow-x: auto; }
+  @media (max-width: 640px) { td:first-child { white-space: normal; width: auto; } }
 </style></head><body><style>
   .topnav { position: sticky; top: 0; z-index: 1000; display: flex; flex-wrap: wrap; gap: 0.1rem; align-items: center; justify-content: center;
             background: #171420; border-bottom: 1px solid #2a2438; padding: 0.4rem 0.8rem;
@@ -120,7 +122,7 @@
   apply();
 })();</script><div class="page">
   <h1>📖 Commands &amp; API</h1>
-  <p class="sub">Everything Vortex Raid Tool answers to. Member commands work anywhere — best in a DM with the bot; replies are private either way. Officer commands need the <b>Management</b> Discord role (checked live, DMs included).</p>
+  <p class="sub">Everything Vortex Raid Tool answers to. Member commands work anywhere — best in a DM with the bot; replies are private either way. Officer commands need the <b>Management</b> Discord role (checked live, DMs included). Locked pages open with the <b>Log in</b> button in the menu: officer passphrase, or the guildmaster password which unlocks everything.</p>
 
   <h2>Discord — everyone</h2>
   <div class="tablewrap"><table><tbody>
@@ -132,11 +134,11 @@
     <tr><td><code>/wish rank &lt;item&gt; &lt;position&gt;</code></td><td>Jump an item straight to a rank.</td></tr>
     <tr><td><code>/wish web</code></td><td>A personal <b>1-hour link</b> to the <a href='wishlist.html'>browser editor</a> — drag &amp; drop reorder, search-to-add, paste an export to build from scratch. The link is the login.</td></tr>
     
-    <tr><td><code>/mark request</code></td><td>Request your 2 Marks of the Illidari for this lockout (Wed–Tue) — bring 20g (10g each). Once per lockout.</td></tr>
+    <tr><td><code>/mark request</code></td><td>Request your 2 Marks of the Illidari for this lockout (Wed–Tue) — bring 20g (10g each). Once per lockout; needs a guild rank (Raider / Trial / Member) — pickups can't.</td></tr>
     <tr><td><code>/mark cancel</code></td><td>Withdraw a pending request this lockout.</td></tr>
     <tr><td><code>/mark list</code></td><td>This lockout's queue — who's waiting ⏳, who's been served ✅.</td></tr>
     <tr><td><code>/mark history [name]</code></td><td>All-time marks handed out — totals, or one raider's full log.</td></tr>
-    <tr><td><code>/assign &lt;boss&gt; [date]</code></td><td>Tonight's assignments for one boss, generated from the Raid-Helper comp: tanks, healer pairings, positions, misdirects, rotations, Bloodlust — autofilled where one player qualifies, first-preferred with alternatives where several do, warned where nobody does. Templates + preferences in config/assignments.json; resist-gated slots read the resist database. Full page: <a href='assign.html'>assign.html</a>.</td></tr>
+    <tr><td><code>/assign &lt;boss&gt; [date]</code></td><td>Assignments for one boss, generated from the next Raid-Helper comp: tanks, healer pairings, positions, misdirects, kick rotations, curses, Bloodlust — with the room diagram. <code>boss:tonight</code> gives every boss of the night; <code>date</code> picks another event. Officer pins and history are respected. Full page: <a href='assign.html'>assign.html</a>.</td></tr>
     <tr><td><code>/resist update &lt;type&gt; &lt;amount&gt;</code></td><td>Record a resist set — fire / shadow / nature / arcane / frost, unbuffed amount from the character sheet (0 clears). Officers can add <code>player</code> to set someone else's. <code>/resist list [type]</code> shows holders best-first; <code>/resist mine</code> your own. Feeds resist-gated raid assignments.</td></tr>
   </tbody></table></div>
 
@@ -145,36 +147,66 @@
     <tr><td><code>/whowants &lt;item&gt;</code></td><td>Everyone with the item still open on their wishlist, Priority order, with a debt preview per candidate (&quot;if won (−30): 50.1 #9&quot;). Tier tokens match set-piece listers; recipes match crafted-item listers.</td></tr>
     <tr><td><code>/droplist &lt;boss&gt;</code></td><td>The boss's whole loot table at once — wanted items first (most contested on top, top 3 claims each), unclaimed rest as a roll-or-shard footer.</td></tr>
     <tr><td><code>/mrt [date] [everyone]</code></td><td>The comp-selected roster as in-game character names (Discord nicks → roster mains, accents restored from the logs), laid out exactly like the comp tool's export — each row is a slot position, columns are groups 1→5 — for pasting into Method Raid Tools. Live from Raid-Helper; likely alts and unknown names flagged. <code>everyone</code> = all signups instead of the comp (alphabetical, one per line).</td></tr>
+    <tr><td><code>/assign &lt;boss&gt; post:true</code></td><td>Post the pull card in this channel — embed with the assignments and the room diagram. <code>boss:tonight</code> posts one card per boss. Posted cards <b>update themselves</b> when the comp or an officer pin changes.</td></tr>
+    <tr><td><code>/checkin</code></td><td>Who is in tonight's Warcraft Logs upload vs the posted comp, right now — missing raiders, extras, and anyone not on the roster at all. The bot also posts this by itself 10 min after the raid start (reminder at 25).</td></tr>
     <tr><td><code>/prio [name]</code></td><td>The top of the board, or any raider's line.</td></tr>
     <tr><td><code>/wish list member:@X</code></td><td>Anyone's ranked list.</td></tr>
     <tr><td><code>/wishadmin lock [phase] · unlock · status</code></td><td>Phase lock: freezes every wishlist completely; wins keep crossing off automatically. Unlock between phases.</td></tr>
     <tr><td><code>/wishadmin review · reprice</code></td><td>Awards flagged “didn't respond on time”: list them, then reprice one to what it really was — standings rebuild on the spot.</td></tr>
-    <tr><td><code>/wishadmin digest on|off</code></td><td>Run <code>on</code> in a channel: it gets one post per day after the first build (normally 23:45, minutes after raid) — recorded loot, weekly movers, top 5, warnings.</td></tr>
+    <tr><td><code>/wishadmin nudge [send]</code></td><td>DM regular raiders (6+ raid nights in the last 8 weeks) who still have no wishlist. Preview by default; <code>send:true</code> sends. Runs by itself too — see below.</td></tr>
+    <tr><td><code>/wishadmin digest on|off</code></td><td>Run <code>on</code> in a channel: it gets one post per day after the first build (normally 23:45, minutes after raid) — recorded loot, weekly movers, top 5, new faces in the log, warnings.</td></tr>
     <tr><td><code>/attendance set &lt;name&gt; &lt;date&gt; &lt;status&gt;</code></td><td>Overrule one raider's night (attended / bench / noshow / missed) — replaces any earlier override for that night, rebuilds instantly. <code>/attendance list</code> shows what's on file.</td></tr>
     <tr><td><code>/roster add</code></td><td>Add a recruit: character, class, role, Discord account, rank (default Trial). Attendance counts from today.</td></tr>
+    <tr><td><code>/roster link &lt;character&gt;</code></td><td>File a character the logs saw that matches nobody: <code>alt_of:&lt;main&gt;</code> makes it their alt; <code>member:@X</code> puts it under that Discord account (their alt if they already have a main here, else a new main — class and role default to what the logs say); <code>pickup:true</code> keeps a pug out of the standings. The character field autocompletes from the unknown list.</td></tr>
+    <tr><td><code>/roster unknown</code></td><td>Characters seen in the logs or loot history with no roster entry — nights seen, class, and who they probably are (rostered that night but never in the log).</td></tr>
     <tr><td><code>/mark given &lt;name&gt; · /mark undo</code></td><td>Tick mark hand-outs (20g collected) — walk-ups who never typed /mark request get recorded too, so once-per-lockout always holds.</td></tr>
   </tbody></table></div>
 
-  <h2>Pages</h2>
+  <h2>Runs by itself</h2>
   <div class="tablewrap"><table><tbody>
-    <tr><td><a href="rules.html">rules.html</a></td><td>The loot system, in full — public.</td></tr>
-    <tr><td><a href="loot-history.html">loot-history.html</a></td><td>Every award ever — sortable, filterable — public.</td></tr>
-    <tr><td><a href="wishlist.html">wishlist.html</a></td><td>The browser wishlist editor — open it via your <code>/wish web</code> link.</td></tr>
-    <tr><td><a href="dashboard.html">dashboard.html</a> <span class="lock">🔒</span></td><td>Live standings with per-raider receipts — officer passphrase.</td></tr>
-    <tr><td><a href="officers.html">officers.html</a> <span class="lock">🔒</span></td><td>Wishlists × Priority, T6 token demand, review queue, chase list — officer passphrase.</td></tr>
-    <tr><td><a href="marks.html">marks.html</a> <span class="lock">🔒</span></td><td>Marks of the Illidari tracker — tick hand-outs live; officer passphrase + your name.</td></tr>
+    <tr><td><code>23:45 nightly build</code></td><td>Pulls Warcraft Logs (attendance · parses · consumables), Raid-Helper (signups · comps) and the RCLootCouncil history, recomputes every score from raw data, republishes the site. Officer edits (repricing, overrides, pins, links) rebuild and republish within a minute.</td></tr>
+    <tr><td><code>Raid check-in</code></td><td>10 min after the posted start: who is in the log vs the comp, in the officer channel; a reminder at 25 min if people are still missing.</td></tr>
+    <tr><td><code>Pull cards</code></td><td>Posted <code>/assign</code> cards re-edit themselves when the Raid-Helper comp changes (the bot reads the comp posts) or an officer reworks a row on the assignments page.</td></tr>
+    <tr><td><code>Wishlist reminders</code></td><td>A DM to anyone with 6+ raid nights in the last 8 weeks and no wishlist — with the browser link, so it takes a minute.</td></tr>
+    <tr><td><code>Nightly digest</code></td><td>If armed with <code>/wishadmin digest on</code>: loot recorded, movers, top 5, new characters in the log, warnings.</td></tr>
+  </tbody></table></div>
+
+  <h2>Pages</h2>
+  <p class="sub">Locked pages appear in the menu after <b>Log in</b>. Officers use the passphrase; the guildmaster password unlocks those plus Settings.</p>
+  <div class="tablewrap"><table><tbody>
+    <tr><td><a href="./">Home</a><span class="chip ">public</span></td><td>The landing page.</td></tr>
+    <tr><td><a href="rules.html">rules.html</a><span class="chip ">public</span></td><td>The loot system, in full.</td></tr>
+    <tr><td><a href="loot-history.html">loot-history.html</a><span class="chip ">public</span></td><td>Every award ever — sortable, filterable. Officers logged in get <b>council mode</b> (award an item live, with the claims ranked) and the <b>import</b> panel for histories from other addons (Gargul, ThatsMyBIS, CEPGP, DKP, spreadsheets).</td></tr>
+    <tr><td><a href="wishlist.html">wishlist.html</a><span class="chip ">guild members</span></td><td>The browser wishlist editor — open it via your <code>/wish web</code> link.</td></tr>
+    <tr><td><a href="assign.html">assign.html</a><span class="chip ">guild members</span></td><td>Tonight's assignments per boss, live from the next posted comp, with diagrams and the All-night tab (curses, Expose Armor, Demo Shout). Officers logged in rework any row (class-coloured menus), add optional healers, browse past weeks.</td></tr>
+    <tr><td><a href="api.html">api.html</a><span class="chip ">public</span></td><td>This page.</td></tr>
+    <tr><td><a href="dashboard.html">dashboard.html</a><span class="chip lockchip">officers 🔒</span></td><td>Live standings with per-raider receipts, the signup cross-check, and the <b>unknown characters</b> panel for filing new log names.</td></tr>
+    <tr><td><a href="officers.html">officers.html</a><span class="chip lockchip">officers 🔒</span></td><td>Wishlists × Priority, T6 token demand, review queue, chase list.</td></tr>
+    <tr><td><a href="marks.html">marks.html</a><span class="chip lockchip">officers 🔒</span></td><td>Marks of the Illidari tracker — tick hand-outs live; your login name is recorded.</td></tr>
+    <tr><td><a href="settings.html">settings.html</a><span class="chip lockchip">guildmaster 🔒</span></td><td>Every setting: score weights, roster (with alts, inactive and pickup flags), resist sets, boss templates, feature switches, access rules, loot system. Rebuild and restart buttons.</td></tr>
   </tbody></table></div>
 
   <h2>HTTP API</h2>
-  <p class="sub">Served from the guild PC via <code>https://enr.tail10d5e9.ts.net</code>. Wishlist calls authenticate with the 1-hour token from <code>/wish web</code>; marks calls with the officer passphrase. Cross-origin is allowed for this site only.</p>
+  <p class="sub">Served from the guild PC via <code>https://enr.tail10d5e9.ts.net</code>. Wishlist calls authenticate with the 1-hour token from <code>/wish web</code>; officer calls with the officer passphrase (<code>key</code>) plus the acting officer's name (<code>by</code>); settings calls with the guildmaster password. Cross-origin is allowed for this site only.</p>
   <div class="tablewrap"><table><tbody>
     <tr><td><code>GET /api/wishlist?token=…</code></td><td>Your list: name, lock state, items with slot / won / stackable-ring flags.</td></tr>
     <tr><td><code>POST /api/wishlist</code></td><td><code>{ token, ids: [itemId…] }</code> — replaces your order. Caps: 2 copies for non-unique rings, 1 for everything else; equippables only; 423 while phase-locked.</td></tr>
     <tr><td><code>GET /api/search?token=…&amp;q=…</code></td><td>Item search over the local database (Rare+, equippables).</td></tr>
     <tr><td><code>POST /api/import</code></td><td><code>{ token, text }</code> — a WoWSims / Sixty Upgrades export; replaces the whole list.</td></tr>
-    <tr><td><code>GET /api/marks?key=…</code></td><td>Current lockout queue + roster + all-time totals. <code>key</code> = officer passphrase.</td></tr>
-    <tr><td><code>POST /api/marks</code></td><td><code>{ key, by, action: &quot;given&quot;|&quot;undo&quot;, main }</code> — tick or un-tick a hand-out; <code>by</code> is logged as the acting officer. 409 on double-grants.</td></tr>
+    <tr><td><code>GET /api/assignments[?date=…]</code></td><td>The next comp's assignments, every boss: sections, rows, alternatives, warnings, diagrams. <code>extra=slot,…</code> fills optional slots (officer key needed).</td></tr>
+    <tr><td><code>GET /api/assignments/events</code></td><td>Server-sent events: a version tick whenever the comp, a pin or the history changes — the page refreshes on it.</td></tr>
+    <tr><td><code>POST /api/assignments/pin</code></td><td><code>{ key, by, date, boss, row, player | list }</code> — an officer's rework of one row (swap semantics; blank = back to automatic). Posted pull cards re-edit.</td></tr>
+    <tr><td><code>GET /api/assignments/history?key=…</code></td><td>Past weeks' assignments by date, read-only, for the officer date bar.</td></tr>
+    <tr><td><code>GET /api/marks?key=…</code></td><td>Current lockout queue + roster + all-time totals.</td></tr>
+    <tr><td><code>POST /api/marks</code></td><td><code>{ key, by, action: &quot;given&quot;|&quot;undo&quot;, main }</code> — tick or un-tick a hand-out; 409 on double-grants.</td></tr>
+    <tr><td><code>GET /api/council/search · claims · recent</code></td><td>Council mode: item search, the ranked open claims for one item (Priority, if-won preview), the latest awards.</td></tr>
+    <tr><td><code>POST /api/council/award · undo</code></td><td><code>{ key, by, id, player, response }</code> records an award into the loot history (standings rebuild); <code>undo</code> removes one by id.</td></tr>
+    <tr><td><code>POST /api/loot/preview · import</code></td><td>Loot-history import: <code>{ key, text, system }</code> reads a pasted export (CSV / TSV / JSON) and proposes the column mapping; <code>import</code> adds <code>mapping</code>, date order and default response and files the rows next to the addon data.</td></tr>
+    <tr><td><code>GET /api/loot/imports · POST /api/loot/undo</code></td><td>Imports on file (with the supported loot systems and the guild default), and removal of one import.</td></tr>
+    <tr><td><code>GET /api/roster/unknown?key=…</code></td><td>Log characters with no roster entry, with class, nights, likely owner and any matching Raid-Helper signup.</td></tr>
+    <tr><td><code>POST /api/roster/link</code></td><td><code>{ key, by, name, altOf | discord + discordId | pug, class?, role? }</code> — file a character as an alt, a new main or a pickup; roster validated, backed up, audited; standings rebuild.</td></tr>
+    <tr><td><code>GET/POST /api/settings</code></td><td>Guildmaster password: read every config file with its schema, or write one field (<code>{ file, path, value }</code>) or a whole file (<code>{ file, doc }</code>). <code>/rebuild</code> and <code>/restart</code> do what they say; <code>/unlock</code> hands the officer passphrase to a guildmaster login.</td></tr>
   </tbody></table></div>
 
-  <p class="sub" style="margin-top:2rem">Data flow: Warcraft Logs (attendance · parses · consumables) + Raid-Helper (signups · rosters) + RCLootCouncil history (read straight from the game files) rebuild everything nightly at 23:45; wishlist and mark changes publish within ~a minute. Alts always roll below mains, and the council always has the last word.</p>
+  <p class="sub" style="margin-top:2rem">Data flow: Warcraft Logs (attendance · parses · consumables) + Raid-Helper (signups · comps) + RCLootCouncil history (read straight from the game files, or imported) rebuild everything nightly at 23:45; officer edits publish within ~a minute. Alts always roll below mains, and the council always has the last word.</p>
 </div></body></html>
