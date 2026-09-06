@@ -45,7 +45,7 @@
   "use strict";
   var API = "https://enr.tail10d5e9.ts.net";
   var DISCORD = true;
-  var FEATURES = {"marks":true,"council":true};
+  var FEATURES = {"marks":true,"council":true,"assignments":true,"imports":true};
   document.querySelectorAll("[data-feature]").forEach(function (el) { if (FEATURES[el.getAttribute("data-feature")] === false) el.remove(); });
   var LEVELS = ["officer", "guildmaster"];
   var btn = document.getElementById("tn-login");
@@ -159,5 +159,5 @@
   <a href="officers.html" data-gate="officer" hidden>Officer View 🔒<small>wishlists × Priority</small></a>
   <a href="marks.html" data-gate="officer" hidden>Marks Tracker 🔒<small>Marks of the Illidari hand-outs</small></a>
   <a href="settings.html" data-gate="guildmaster" hidden>Settings 🔒<small>every knob: scoring, roster, raid roles, access</small></a>
-  <div class="powered">Vortex Raid Tool</div>
+  <div class="powered">Vortex Raid Tool · Pro</div>
 </div></div></body></html>
